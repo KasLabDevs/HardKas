@@ -1,3 +1,8 @@
+---
+title: "Capability Matrix"
+description: "What the HardKAS release checks verify, capability by capability: the repository's own verification, not a third-party certification."
+---
+
 # Capability Matrix
 
 What the release checks verify, by capability. This is the repository's own verification, not a third-party certification.
@@ -5,7 +10,7 @@ What the release checks verify, by capability. This is the repository's own veri
 > [claims.generated.md](./claims.generated.md), produced from `packages/sdk` by
 > `pnpm docs:generate-claims`. Anything restated below is prose, not the source.
 
-This matrix describes the capabilities HardKas should prove before a release is treated as stable. For 0.13.0-rc.3, the priority is the local-first development loop.
+This matrix describes the capabilities HardKas should prove before a release is treated as stable. For 1.0.0, the priority is the local-first development loop.
 
 ## Local Transaction Lifecycle
 
@@ -73,10 +78,7 @@ Status: supporting release gate
 Coverage:
 
 - The dashboard reads the dev-server API instead of inventing state.
-- `@hardkas/client` remains browser-safe and talks HTTP to the dev server.
-- `@hardkas/react` provides React bindings over `@hardkas/client`.
-- Both are workspace packages only: they are not published in this release
-  ([Versioning: not published](./versioning.md#not-published)).
+- Browser code talks HTTP to the dev server through `@hardkas/sdk/client`, which holds no keys.
 - The browser does not import the Node SDK directly.
 
 ## Real Simnet RPC
@@ -104,12 +106,11 @@ Coverage:
 - Run the standard transaction lifecycle against the local node.
 - Compile SilverScript with the official silverc v1.0.0, deploy and spend P2SH contracts, and run 1:1 auth-bound
   covenant transitions (transaction v1), each with real-node evidence in `fixtures/toccata-v2/silver`.
-- Run simulator deploy/spend receipts (the simulator is experimental and approximate: not consensus evidence).
-- Compare simulator and Docker receipts in `artifact-coherence` mode.
 - Verify the golden corpus (`hardkas corpus verify fixtures/toccata-v2/silver`).
 
-Covenant topologies other than 1:1 (1:N, N:M, termination): built by the SDK's v1 engine and judged by a real
-rusty-kaspad on simnet (`covenant-topologies-node.simnet`); not a corpus capability, not proven on testnet-10.
+Covenant topologies other than 1:1 (1:N, N:M, termination): built by the SDK's v1 engine, reached from the CLI with
+`hardkas silver covenant start` and `hardkas silver covenant advance`, and judged by a real rusty-kaspad on simnet (`covenant-topologies-node.simnet`,
+`silver-covenant-topologies-cli.simnet`); not a corpus capability, not proven on testnet-10.
 
 Claims:
 
@@ -118,11 +119,8 @@ Claims:
 - VM/consensus equivalence: `NOT_CLAIMED`.
 - Mainnet: `BLOCKED_BY_POLICY`.
 
-The strict compare mode may still show non-consensus runtime identifier drift.
-That drift is expected and does not block the alpha localnet gate.
-
 ## Mainnet
 
-Status: out of scope for the 0.13.0-rc.3 happy path
+Status: out of scope for the 1.0.0 happy path
 
 Any future mainnet certification must be separate from local simulation and simnet tests. It needs stronger UX guards, signing policy, documentation, and operational review.

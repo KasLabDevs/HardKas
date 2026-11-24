@@ -194,7 +194,13 @@ export function parseR0Groth16Receipt(receiptHex: string): R0Groth16ReceiptParse
       issues
     };
   }
-  if (tag === 0) return { ok: true, sealHex, claimEncoding: "UNPRUNED_VALUE", issues };
+  if (tag === 0) {
+    issues.push({
+      code: "ZK_RECEIPT_UNPRUNED_UNSUPPORTED",
+      message: "receipt carries an unpruned claim value (tag 0); only pruned-digest receipts (tag 1) can verify claimDigest and verifierParameters"
+    });
+    return { ok: false, sealHex, claimEncoding: "UNPRUNED_VALUE", issues };
+  }
   issues.push({ code: "ZK_RECEIPT_MALFORMED", message: `unknown MaybePruned tag ${String(tag)}` });
   return { ok: false, sealHex, claimEncoding: "UNKNOWN", issues };
 }

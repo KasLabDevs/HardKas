@@ -50,9 +50,7 @@ export async function getOrCreateDevAccount(
       DEV_ACCOUNTS_PASSWORD
     );
     if (!unlock.success || !unlock.payload) {
-      throw new Error(
-        `Failed to decrypt dev account ${alias}. Expected password: ${DEV_ACCOUNTS_PASSWORD}`
-      );
+      throw new Error(`Failed to decrypt dev account ${alias}.`);
     }
     return {
       address: unlock.payload.address,

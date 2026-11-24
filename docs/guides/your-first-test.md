@@ -1,3 +1,8 @@
+---
+title: "Your First HardKAS Test"
+description: "Write and run a first scenario-driven HardKAS test for Kaspa with Vitest, then turn its run into an evidence file you can verify."
+---
+
 # Your First HardKAS Test
 
 Testing is a first-class citizen in the HardKAS framework. HardKAS brings a scenario-driven testing engine powered by Vitest, tailored for the Kaspa network.
@@ -6,8 +11,9 @@ Testing is a first-class citizen in the HardKAS framework. HardKAS brings a scen
 
 When you generate a project using `hardkas init`, you'll notice tests use `scenario` instead of `it` or `test`:
 
+<!-- doc-example: skip the published declaration of @hardkas/testing/scenarios types scenario as any, so strict tsc cannot type hk (a packages/testing typing gap, not a docs error) -->
 ```typescript
-import { scenario, expect } from "@hardkas/testing";
+import { scenario, expect } from "@hardkas/testing/scenarios";
 
 scenario("payment flow", async ({ hk }) => {
   // Test your smart contracts, transactions, or backend integrations here

@@ -22,7 +22,6 @@ export const NO_EFFECT_OPTIONS: Readonly<Record<string, Readonly<Record<string, 
     "--template": "init has one scaffold; for templates use 'hardkas create'",
     "--accounts": "init always creates the 5 simulated accounts alice…erin"
   },
-  up: { "--json": "up prints human output only" },
   "localnet start": { "--detached": "the node always runs as a detached Docker container" },
   "localnet fork": { "--json": "not implemented yet: no JSON is printed" },
   "session create": { "--json": "not implemented yet: the output is text only" },

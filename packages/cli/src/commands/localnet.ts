@@ -86,6 +86,68 @@ export function registerLocalnetCommands(program: Command): void {
     });
 
   localnet
+    .command("reset")
+    .description(
+      `Start the localnet over from an empty chain: stop the Docker toccata-v2 node and its miner and remove this workspace's chain data (.hardkas/kaspad); a running node whose chain is another workspace's is refused; dev accounts, keys and records are kept; needs Docker ${UI.maturity("alpha")}`
+    )
+    .option("--yes", "Confirm the removal of this workspace's chain data (required with --json)", false)
+    .option("--wait-lock", "Wait for workspace lock if held", false)
+    .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
+    .option("--json", "Output as JSON", false)
+    .action(async (opts) => {
+      // the reset acts on the workspace whose hardkas.config.* it runs under (its .hardkas/kaspad and its lock), never on
+      // a bare current directory
+      const { loadHardkasConfig } = await import("@hardkas/config");
+      const workspace = await loadHardkasConfig();
+      if (!workspace.path) {
+        throw new HardkasCliError(
+          "WORKSPACE_NOT_FOUND",
+          `No HardKAS workspace (hardkas.config.*) at or above ${process.cwd()}; 'localnet reset' removes a workspace's chain data and runs only inside one. Nothing was reset.`,
+          { exitCode: HardkasExitCode.USAGE_ERROR }
+        );
+      }
+      if (opts.json && !opts.yes) {
+        throw new HardkasCliError(
+          "INTERACTIVE_PROMPT_IN_JSON_MODE",
+          "'localnet reset --json' cannot ask for confirmation. Pass --yes to confirm. Nothing was reset.",
+          { exitCode: HardkasExitCode.USAGE_ERROR }
+        );
+      }
+      const lockTimeoutMs = Number.parseInt(String(opts.lockTimeout), 10);
+      const { withLock } = await import("@hardkas/core");
+      const { runLocalnetReset } = await import("../runners/localnet-reset-runner.js");
+      try {
+        await withLock(
+          {
+            rootDir: workspace.cwd,
+            name: "node",
+            command: "hardkas localnet reset",
+            wait: !!opts.waitLock,
+            timeoutMs: Number.isFinite(lockTimeoutMs) && lockTimeoutMs > 0 ? lockTimeoutMs : 30000
+          },
+          async () => {
+            if (!opts.yes) {
+              const confirmed = await UI.confirm(`This stops the localnet and deletes this workspace's chain data (${workspace.cwd}${"/"}.hardkas/kaspad). Continue?`);
+              if (!confirmed) {
+                console.log("  Aborted. Nothing was reset.");
+                return;
+              }
+            }
+            await runLocalnetReset({ workspaceRoot: workspace.cwd, json: !!opts.json });
+          }
+        );
+      } catch (e: any) {
+        // a held lock is rendered as every node command renders it; anything else is the command's own error
+        if (["LOCK_HELD", "LOCK_TIMEOUT", "STALE_LOCK"].includes(String(e?.code ?? ""))) {
+          const { handleLockError } = await import("../ui.js");
+          handleLockError(e);
+          return;
+        }
+        throw e;
+      }
+    });
+
+  localnet
     .command("status")
     .description(`Show localnet status ${UI.maturity("alpha")}`)
     .option("--json", "Output as JSON", false)

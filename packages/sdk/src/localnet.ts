@@ -94,7 +94,7 @@ export class HardkasLocalnet {
    * Initializes the in-memory simulated workspace.
    *
    * Docker Toccata process control remains a CLI/localnet responsibility in
-   * 0.13.0-rc.3; the SDK reports that boundary instead of silently shelling out.
+   * 1.0.0; the SDK reports that boundary instead of silently shelling out.
    */
   async start(options: LocalnetProfileOptions = {}): Promise<LocalnetControlResult> {
     const profile = options.profile || "simulated";
@@ -114,7 +114,7 @@ export class HardkasLocalnet {
       profile,
       status: "SDK_LOCALNET_CONTROL_UNSUPPORTED",
       message:
-        "SDK Docker localnet start is not supported in 0.13.0-rc.3. Use `hardkas localnet start --profile toccata-v2`."
+        "SDK Docker localnet start is not supported in 1.0.0. Use `hardkas localnet start --profile toccata-v2`."
     };
   }
 
@@ -140,7 +140,7 @@ export class HardkasLocalnet {
       profile,
       status: "SDK_LOCALNET_CONTROL_UNSUPPORTED",
       message:
-        "SDK Docker localnet stop is not supported in 0.13.0-rc.3. Use `hardkas localnet stop --profile toccata-v2`."
+        "SDK Docker localnet stop is not supported in 1.0.0. Use `hardkas localnet stop --profile toccata-v2`."
     };
   }
 
@@ -178,7 +178,7 @@ export class HardkasLocalnet {
       identifier,
       status: "SDK_TOCCATA_FUNDING_UNSUPPORTED",
       message:
-        "SDK Toccata funding is not supported in 0.13.0-rc.3. Use `hardkas localnet fund <account> --profile toccata-v2`."
+        "SDK Toccata funding is not supported in 1.0.0. Use `hardkas localnet fund <account> --profile toccata-v2`."
     };
   }
 
@@ -229,7 +229,12 @@ export class HardkasLocalnet {
         ["inspect", "--format", "{{.State.Status}}|{{.Config.Image}}|{{.Name}}", name],
         {
           encoding: "utf8",
-          stdio: "pipe"
+          stdio: "pipe",
+          // AUDIT 2026-11-21 (DOCKER-PROBE-TIMEOUT-SDK): a Docker engine that does not answer left this synchronous call
+          // blocked forever (the whole process with it). The same 20 s limit as the CLI's probes
+          // (DOCKER_PROBE_TIMEOUT_MS, @hardkas/node-runner); past it the miner is reported not found, as on any error.
+          timeout: 20_000,
+          windowsHide: true
         }
       );
       const [status, detectedImage, rawName] = stdout.trim().split("|");

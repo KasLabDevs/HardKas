@@ -145,7 +145,11 @@ export interface Kcc20TransferOptions {
   readonly inputs?: ReadonlyArray<{ readonly outpoint: { readonly transactionId: string; readonly index: number }; readonly signer?: string | undefined }> | undefined;
   /** The recipients, in output order (p2pk-schnorr/v1 owners). */
   readonly to: readonly Kcc20Holder[];
-  /** Who pays the fee (P2PK coins). Default: the token inputs' KAS (the first output without a KAS value keeps the rest). */
+  /**
+   * Who pays the fee (P2PK coins). Default (BETA-FIX W2): the sender's side, never a recipient's output — the sender's
+   * token change output keeps what the fee leaves; without token change, the sender's (`from`'s) own coins pay it; when
+   * neither can, KCC20_FEE_SOURCE_REQUIRED (kcc20TransferFeeSource). It used to be the first new output, the receiver's.
+   */
   readonly funder?: string | undefined;
   readonly feeSompi?: bigint | undefined;
   readonly maxFeeSompi?: bigint | undefined;
@@ -164,9 +168,52 @@ export interface Kcc20PlannedTransfer {
   readonly inputs: ReadonlyArray<{ readonly outpoint: string; readonly role: "leader" | "delegator"; readonly signer: string; readonly state: Kcc20State; readonly kasSompi: bigint }>;
   readonly outputs: ReadonlyArray<{ readonly index: number; readonly address: string; readonly kasSompi: bigint; readonly state: Kcc20State }>;
   readonly program: Kcc20Program;
+  /** Who paid the fee (kcc20TransferFeeSource): the funder, the sender's token change, the sender's own coins, or the explicit outputs' remainder. */
+  readonly feeSource: Kcc20FeeSource;
 }
 
 const kcc20Error = (code: string, message: string, metadata?: Record<string, unknown>) => new HardkasError(code, message, metadata ? { metadata } : undefined);
+
+/**
+ * Who pays a KCC-20 transfer's network fee (BETA-FIX W2). Never a recipient's output: the fee used to come out of the
+ * first new output, the receiver's.
+ *  - `funder`: the named funder's coins (P2PK fee inputs, change back to it); every output keeps its KAS.
+ *  - `token-change`: no funder, and the transfer returns token change to the sender: that output keeps what the fee
+ *    leaves of its share (the fee is the node's floor for the transaction).
+ *  - `sender-coins`: no funder and no token change: the sender's own coins pay it (the sender is the funder).
+ *  - `explicit-outputs`: no funder, no token change, no sender, and the caller set every output's KAS: the fee is what
+ *    those outputs leave of the token inputs' KAS (held to the fee limit), as the caller chose.
+ * Otherwise KCC20_FEE_SOURCE_REQUIRED (nothing is planned). Why each is a valid transfer: the KCC-20 reference program's
+ * normal path checks the token amounts (conservation), owner and borrow schemes, the extension commitment and the
+ * continuation count, never an output's KAS value (only its borrow path does); P2PK fee inputs and their change are not
+ * covenant inputs or outputs, so they leave the covenant's counts untouched.
+ */
+export type Kcc20FeeSource =
+  | { readonly kind: "funder"; readonly account: string }
+  | { readonly kind: "token-change"; readonly outputIndex: number }
+  | { readonly kind: "sender-coins"; readonly account: string }
+  | { readonly kind: "explicit-outputs" };
+
+export function kcc20TransferFeeSource(args: {
+  /** The new token outputs, in output order (recipients, then the sender's change when there is one). */
+  readonly recipients: ReadonlyArray<{ readonly kasSompi?: bigint | undefined }>;
+  /** The index of the sender's token change output in `recipients`, or -1 when the transfer returns none. */
+  readonly changeIndex: number;
+  readonly funder?: string | undefined;
+  /** The sender (`from`), when the transfer names one. */
+  readonly from?: string | undefined;
+}): { readonly restAt: number; readonly funder?: string; readonly source: Kcc20FeeSource } {
+  if (args.funder !== undefined) return { restAt: -1, funder: args.funder, source: { kind: "funder", account: args.funder } };
+  if (args.changeIndex >= 0 && args.recipients[args.changeIndex]?.kasSompi === undefined) {
+    return { restAt: args.changeIndex, source: { kind: "token-change", outputIndex: args.changeIndex } };
+  }
+  if (args.from !== undefined) return { restAt: -1, funder: args.from, source: { kind: "sender-coins", account: args.from } };
+  if (args.recipients.length > 0 && args.recipients.every((r) => r.kasSompi !== undefined)) return { restAt: -1, source: { kind: "explicit-outputs" } };
+  throw kcc20Error(
+    "KCC20_FEE_SOURCE_REQUIRED",
+    "this transfer has no sender-side source for its fee: it names no sender (`from`) and returns no token change, and a recipient's output is never charged. Name a funder (an account whose coins pay the fee). Nothing was planned, signed or sent."
+  );
+}
 
 /**
  * The engine's facts for a KCC-20 program: the contract as silverc reproduced it, with the covenant shape KCC-20 and its
@@ -368,16 +415,21 @@ export class HardkasKcc20 {
       kasSompi: t.kasSompi
     }));
     // the change in tokens goes back to `from` (a p2pk-schnorr/v1 output)
+    let changeIndex = -1;
     if (options.from !== undefined && held > want) {
+      changeIndex = recipients.length;
       recipients.push({ state: kcc20State({ amount: held - want, owner: signerKey(options.from), ownerScheme: 0x00, borrowScheme: 0x00, borrowGuard: ZERO32, extensionCommitment: leader.state.extensionCommitment }) });
     }
-    // the KAS of the outputs: given, else an equal share of the inputs'; without a funder the first output without a value
-    // keeps what the fee leaves (the fee is then the node's floor for this very transaction)
+    // the KAS of the outputs: given, else an equal share of the inputs'. BETA-FIX W2: who pays the fee is the sender's
+    // side, never a recipient (kcc20TransferFeeSource): the token change output keeps what the fee leaves (the fee is then
+    // the node's floor for this very transaction), else the sender's own coins pay it (the sender as the funder)
+    const fees = kcc20TransferFeeSource({ recipients, changeIndex, funder: options.funder, from: options.from });
     const kasIn = chosen.reduce((n, c) => n + c.h.kasSompi, 0n);
     const explicit = recipients.reduce((n, r) => n + (r.kasSompi ?? 0n), 0n);
     const free = recipients.filter((r) => r.kasSompi === undefined).length;
     const share = free > 0 && kasIn > explicit ? (kasIn - explicit) / BigInt(free) : 0n;
-    const restAt = options.funder === undefined ? recipients.findIndex((r) => r.kasSompi === undefined) : -1;
+    const restAt = fees.restAt;
+    const funder = fees.funder;
     const amounts = recipients.map((r, k) => (k === restAt ? ("rest" as const) : (r.kasSompi ?? share)));
     const nextStates = recipients.map((r) => r.state);
 
@@ -418,13 +470,28 @@ export class HardkasKcc20 {
         computeBudget: budgets?.[k] ?? options.computeBudget ?? ("estimate" as const)
       })),
       continuations: recipients.map((r, k) => ({ amountSompi: amounts[k]!, state: this.programState(base, own, r.state) })),
-      ...(options.funder !== undefined ? { funder: options.funder } : {}),
+      ...(funder !== undefined ? { funder } : {}),
       ...(feeSompi !== undefined ? { feeSompi } : options.feeSompi !== undefined ? { feeSompi: options.feeSompi } : {}),
       ...(options.maxFeeSompi !== undefined ? { maxFeeSompi: options.maxFeeSompi } : {})
     });
     const engine = { ...sign, facts, keys };
-    // 2. the engine's plan with placeholder signatures of the final size: the node's inputs, the budgets, the fee
-    const draft = await this.sdk.covenants.planTransition(optionsOf(chosen.map(() => placeholder)) as any, engine);
+    // 2. the engine's plan with placeholder signatures of the final size: the node's inputs, the budgets, the fee. The
+    // sender as the funder (no token change) without spendable coins is refused as "name a funder", never re-planned on
+    // a recipient's KAS
+    let draft: any;
+    try {
+      draft = await this.sdk.covenants.planTransition(optionsOf(chosen.map(() => placeholder)) as any, engine);
+    } catch (e: any) {
+      if (fees.source.kind === "sender-coins" && e?.code === "V1_FEE_INPUTS_INSUFFICIENT") {
+        throw kcc20Error(
+          "KCC20_FEE_SOURCE_REQUIRED",
+          `the transfer leaves '${fees.source.account}' no token change to pay the fee from, and its own coins cannot pay it (${String(e?.message ?? e).replace(/^[A-Z0-9_]+: /, "")}). ` +
+            "A recipient's output is never charged: name a funder (an account whose coins pay the fee; it may be the sender once it holds KAS). Nothing was signed or sent.",
+          { feeSource: "sender-coins", account: fees.source.account }
+        );
+      }
+      throw e;
+    }
     const budgets = (draft.inputs as any[]).slice(0, chosen.length).map((i) => Number(i.computeBudget));
     const k = loadManagedKaspaWasmSync() as any;
     const unsigned = buildV1WasmTransaction(k, draft);
@@ -457,7 +524,8 @@ export class HardkasKcc20 {
       verdict: after,
       inputs: chosen.map((c, i) => ({ outpoint: c.h.outpoint, role: i === 0 ? ("leader" as const) : ("delegator" as const), signer: c.signer, state: c.h.state, kasSompi: c.h.kasSompi })),
       outputs: recipients.map((r, i) => ({ index: i, address: String(plan.outputs[i].address), kasSompi: BigInt(plan.outputs[i].amountSompi), state: r.state })),
-      program
+      program,
+      feeSource: fees.source
     };
   }
 

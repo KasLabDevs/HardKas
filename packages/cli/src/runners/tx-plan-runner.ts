@@ -631,6 +631,9 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       if (e instanceof HardkasError && e.code === "SPENT_OUTPOINTS_NOT_RELEASED") throw e;
       // HK-09 / CA-TX-01: a node fee rate out of bounds (or an invalid bound) is a fee refusal, not a connection error
       if ((e as any)?.code === "FEE_RATE_ABOVE_BOUND" || (e as any)?.code === "INVALID_FEE_RATE") throw e;
+      // RPC-RESPONSE-TOO-LARGE-1: the sender's UTXO list is too large to read: the transport's typed refusal (limit,
+      // remedy), never re-labelled as a connection failure (it was "UNKNOWN: Unknown connection error")
+      if ((e as any)?.code === "RPC_RESPONSE_TOO_LARGE") throw e;
       if (e instanceof Error && (e.message.includes("No UTXOs found") || e.message.includes("Insufficient funds"))) throw e;
 
       const protocol = rpcUrl?.startsWith("ws") ? "WebSocket" : "JSON-RPC";

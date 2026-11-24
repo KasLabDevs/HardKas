@@ -100,7 +100,7 @@ export function buildHardkasProgram(options?: {
 
   program
     .name("hardkas")
-    .description("HardKAS: Kaspa-native developer operating environment")
+    .description("HardKAS: open-source development framework for Kaspa L1")
     .version(HARDKAS_VERSION)
     // AGENT-QUICK-RECIPES-1: the first thing `hardkas --help` prints (before Usage, so a truncated read still sees it),
     // root help only. Only commands proven end to end on a simnet node; the full recipes are in the agent docs.

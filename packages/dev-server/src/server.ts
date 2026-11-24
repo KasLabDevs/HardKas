@@ -28,7 +28,7 @@ import path from "node:path";
 import fs from "node:fs";
 
 import open from "open";
-import { loadSessionStoreWithDiagnostics } from "@hardkas/sessions";
+import { loadSessionStoreWithDiagnostics } from "@hardkas/core";
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
 import { startHardkasWatcher, stopHardkasWatcher } from "./watcher.js";
@@ -72,12 +72,54 @@ export function resolveCorsOrigin(
   return null;
 }
 
+/** Hosts the server may bind to without --unsafe-external: the machine itself. */
+const LOOPBACK_BIND_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
+/** Peer addresses of a local request (the socket's remote address, as @hono/node-server reports it). */
+const LOOPBACK_PEERS = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
+/** The shortest HARDKAS_DEV_TOKEN accepted: it is the only barrier between the API and anything that reaches the port. */
+export const MIN_DEV_TOKEN_LENGTH = 32;
+/** The only routes that take the session token as `?token=`: an EventSource cannot send headers (Authorization). */
+const QUERY_TOKEN_ROUTES = /^\/api\/(?:artifacts\/)?stream\/?$/;
+
+export class DevServerConfigError extends Error {
+  constructor(
+    readonly code: "DEV_SERVER_HOST_NOT_LOOPBACK" | "DEV_SERVER_TOKEN_TOO_WEAK",
+    message: string
+  ) {
+    super(`${code}: ${message}`);
+    this.name = "DevServerConfigError";
+  }
+}
+
+/** The peer of a request, or undefined when the runtime does not say (an in-process call has no socket). */
+function peerOf(c: any): string | undefined {
+  const a = c?.env?.incoming?.socket?.remoteAddress;
+  return typeof a === "string" ? a : undefined;
+}
+
 export function createDevServer(config: DevServerConfig) {
+  // AUDIT 2026-11-21 · M3 (DEV-SERVER-LOCAL-1): "local only" is decided by where the server listens and by the socket the
+  // request came in on, never by headers the client writes. Binding off loopback needs the explicit flag.
+  if (!config.unsafeExternal && !LOOPBACK_BIND_HOSTS.has(config.host)) {
+    throw new DevServerConfigError(
+      "DEV_SERVER_HOST_NOT_LOOPBACK",
+      `the dev server would listen on '${config.host}', which is not this machine only. Use localhost / 127.0.0.1, or pass --unsafe-external to expose it (the session token is then the only protection).`
+    );
+  }
+
   const app = new Hono();
+  // set once the server is really listening: from then on every request has a socket, and one that names no peer is refused
+  let listening = false;
 
   // Generate cryptographically secure session token on server boot or reuse persistent env token
-  const devServerToken =
-    process.env.HARDKAS_DEV_TOKEN || crypto.randomBytes(32).toString("hex");
+  const envToken = process.env.HARDKAS_DEV_TOKEN;
+  if (envToken !== undefined && envToken !== "" && envToken.length < MIN_DEV_TOKEN_LENGTH) {
+    throw new DevServerConfigError(
+      "DEV_SERVER_TOKEN_TOO_WEAK",
+      `HARDKAS_DEV_TOKEN is ${envToken.length} characters; the dev server needs at least ${MIN_DEV_TOKEN_LENGTH}. Unset it to get a random one, or use e.g. \`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"\`.`
+    );
+  }
+  const devServerToken = envToken || crypto.randomBytes(32).toString("hex");
 
   // EVIDENCE-TRUST-1 (ET-C5): the access log never prints a credential. The API accepts its session token as `?token=`
   // (an EventSource cannot send headers), so every logged request path goes through the same redaction as the CLI's
@@ -103,7 +145,19 @@ export function createDevServer(config: DevServerConfig) {
     }
   });
 
-  // 1. Host Header Validation (DNS Rebinding Defense)
+  // 0. Peer check (DEV-SERVER-LOCAL-1): without --unsafe-external only a local peer is served, decided on the socket's
+  // address (what the client cannot write). A request that names no peer is refused once the server listens.
+  app.use("*", async (c, next) => {
+    if (!config.unsafeExternal) {
+      const peer = peerOf(c);
+      if (peer === undefined ? listening : !LOOPBACK_PEERS.has(peer)) {
+        return c.json({ error: "Forbidden: this dev server answers local requests only (--unsafe-external lifts it)." }, 403);
+      }
+    }
+    await next();
+  });
+
+  // 1. Host Header Validation (DNS Rebinding Defense: a browser on this machine reaching it under another name)
   app.use("*", async (c, next) => {
     if (!config.unsafeExternal) {
       const host = c.req.header("Host") || c.req.header("host") || "";
@@ -163,7 +217,9 @@ export function createDevServer(config: DevServerConfig) {
     const authHeader = c.req.header("Authorization");
     const queryToken = c.req.query("token");
     const method = c.req.method.toUpperCase();
-    const queryTokenAllowed = method === "GET" || method === "HEAD";
+    // `?token=` ends in URLs and logs, so it is taken on the SSE stream routes only (an EventSource cannot send headers),
+    // and on GET/HEAD there; every other route needs `Authorization: Bearer` (DEV-SERVER-LOCAL-1)
+    const queryTokenAllowed = (method === "GET" || method === "HEAD") && QUERY_TOKEN_ROUTES.test(c.req.path);
     let token = "";
 
     if (authHeader && authHeader.startsWith("Bearer ")) {
@@ -177,7 +233,7 @@ export function createDevServer(config: DevServerConfig) {
       return c.json(
         {
           error: queryOnly
-            ? `Unauthorized: Invalid or missing bearer token. The ?token= query parameter is accepted on GET requests only; send ${method} requests with the header Authorization: Bearer <token>.`
+            ? `Unauthorized: Invalid or missing bearer token. The ?token= query parameter is accepted on the GET /api/stream and /api/artifacts/stream routes only; send this ${method} ${c.req.path} request with the header Authorization: Bearer <token>.`
             : "Unauthorized: Invalid or missing bearer token."
         },
         401
@@ -254,7 +310,9 @@ export function createDevServer(config: DevServerConfig) {
         overview: "/api/overview",
         query: "/api/query",
         stream: "/api/stream",
-        health: "/api/dashboard-health"
+        health: "/api/dashboard-health",
+        // R3-C · the browser wallet probe page (loopback only; its API is /api/wallet-probe/*)
+        walletProbe: "/wallet-probe"
       }
     })
   );
@@ -299,6 +357,7 @@ export function createDevServer(config: DevServerConfig) {
           port: config.port,
           hostname: bindHost
         });
+        listening = true;
         const origClose = server.close.bind(server);
         (server as any).close = (cb?: any) => {
           stopHardkasWatcher();

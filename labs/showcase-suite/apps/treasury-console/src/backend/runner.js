@@ -52,7 +52,7 @@ async function run() {
         domainOperationReal: true,
         networkSettlementReal: false,
         fallbackUsed: true,
-        packagesExercised: ['@hardkas/toolkit', '@hardkas/jobs', '@hardkas/core', '@hardkas/storage-postgres'],
+        packagesExercised: ['@hardkas/toolkit', '@hardkas/core', '@hardkas/storage-postgres'],
         publicApisExercised: ['JobsToolkit.open', 'JobsToolkit.enqueue', 'JobsToolkit.getJob', 'JobsToolkit.resumePendingJobs'],
         errors,
         expectedGuards: [],

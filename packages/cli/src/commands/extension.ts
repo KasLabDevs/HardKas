@@ -56,9 +56,20 @@ export function readTarballManifest(tgz: Buffer): any {
     const field = (start: number, len: number) => header.subarray(start, start + len).toString("utf8").replace(/\0.*$/s, "");
     const prefix = field(345, 155);
     const name = prefix ? `${prefix}/${field(0, 100)}` : field(0, 100);
-    const size = parseInt(field(124, 12).trim() || "0", 8);
+    const rawSize = field(124, 12).trim();
+    if (rawSize !== "" && !/^[0-7]+$/.test(rawSize)) {
+      throw new HardkasCliError("EXTENSION_TARBALL_INVALID", `Malformed tar entry size: ${JSON.stringify(rawSize)}`, {
+        exitCode: HardkasExitCode.POLICY_DENIED
+      });
+    }
+    const size = rawSize ? parseInt(rawSize, 8) : 0;
     const type = field(156, 1);
     const body = off + 512;
+    if (!Number.isSafeInteger(size) || size < 0 || body + size > tar.length) {
+      throw new HardkasCliError("EXTENSION_TARBALL_INVALID", `Out-of-bounds tar entry size ${size} at offset ${off}`, {
+        exitCode: HardkasExitCode.POLICY_DENIED
+      });
+    }
     if ((type === "0" || type === "") && name.replace(/^\.\//, "") === "package/package.json") {
       return JSON.parse(tar.subarray(body, body + size).toString("utf8"));
     }

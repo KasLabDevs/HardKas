@@ -1,11 +1,11 @@
 import path from "node:path";
-import type { ManagedProcessSpec } from "@hardkas/node-orchestrator";
+import type { ManagedProcessSpec } from "@hardkas/node-runner";
 import { HardkasCliError, HardkasExitCode, type ManagedToolchainReference } from "@hardkas/cli/extension-kit";
 
 /**
  * L2-EXT stage 4 · the local Anvil node: what is specific to Anvil (the verified Foundry binary, its arguments, its
  * readiness) lives here; starting, watching and stopping it is the core's identity-checked process manager
- * (@hardkas/node-orchestrator). Anvil binds 127.0.0.1 only, on the local chain id 31337. Nothing is installed or
+ * (@hardkas/node-runner). Anvil binds 127.0.0.1 only, on the local chain id 31337. Nothing is installed or
  * downloaded here: without a verified Foundry the commands refuse with the exact install command.
  */
 

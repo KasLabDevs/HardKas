@@ -1,3 +1,4 @@
+import { HARDKAS_VERSION } from "@hardkas/artifacts";
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
@@ -7,7 +8,7 @@ import { Hardkas } from "../src/index.js";
 // Cases that recompile or compile with the pinned silverc live in
 // sdk-parity-0-9-1.silverc.test.ts (silverc level); nothing here needs a compiler.
 
-describe("0.13.0-rc.3 SDK parity surface", () => {
+describe("SDK parity surface", () => {
   let workspaceRoot: string;
 
   beforeEach(() => {
@@ -28,7 +29,7 @@ describe("0.13.0-rc.3 SDK parity surface", () => {
     });
     const capabilities = await sdk.capabilities.get("hardkas-1.0-alpha");
 
-    expect(capabilities.version).toBe("0.13.0-rc.3");
+    expect(capabilities.version).toBe(HARDKAS_VERSION);
     expect(capabilities.capabilities.mainnetGuards).toBe(true);
     expect(capabilities.capabilities.consensusValidation).toBe(false);
     expect(capabilities.capabilities.productionWallet).toBe(false);

@@ -1,3 +1,9 @@
+---
+title: "Tutorial: merchant checkout"
+sidebar_label: "Chapter 03: Merchant Checkout"
+description: "Receive Kaspa payments with HardKAS: generate payment URIs and track invoices with the PaymentToolkit."
+---
+
 # Chapter 03: Merchant Checkout
 
 Once you can send funds, the next step is receiving them. The `PaymentToolkit` makes it simple to generate payment URIs and track invoices.

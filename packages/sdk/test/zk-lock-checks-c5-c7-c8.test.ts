@@ -128,27 +128,31 @@ describe("C-7 · consensusEnforced of a spend is read from the redeem script, no
     expect(tx.warnings.map((w) => w.code)).not.toContain("ZK_BINDING_LABEL_NOT_ENFORCED");
   });
 
-  it("C7-2 a proof-only redeem script labelled proof-and-output-bound: consensusEnforced false and ZK_BINDING_LABEL_NOT_ENFORCED (it was true)", () => {
+  it("C7-2 a proof-only redeem script labelled proof-and-output-bound: rejected with ZK_BINDING_LABEL_NOT_ENFORCED and consensusEnforced false", () => {
     const proofOnly = buildR0Groth16Scripts({ ...official });
     const relabelled = { ...proofOnly, bindingMode: "proof-and-output-bound" as const, bindingPolicy: policy, consensusEnforced: true };
     const tx = spend(relabelled);
+    expect(tx.ok).toBe(false);
     expect(tx.bindingMode).toBe("proof-and-output-bound");
     expect(tx.consensusEnforced).toBe(false);
-    expect(tx.warnings.map((w) => w.code)).toContain("ZK_BINDING_LABEL_NOT_ENFORCED");
+    expect(codes(tx)).toContain("ZK_BINDING_LABEL_NOT_ENFORCED");
   });
 
-  it("C7-3 a real output-bound lock whose label names other outputs or another fee cap than its script: not consensus-enforced", () => {
+  it("C7-3 a real output-bound lock whose label names other outputs or another fee cap than its script: rejected with ZK_BINDING_LABEL_NOT_ENFORCED", () => {
     const real = buildR0Groth16Scripts({ ...official, bindingPolicy: policy });
     const otherCap = spend({ ...real, bindingPolicy: { ...policy, maxFeeSompi: 40_000_000n } });
+    expect(otherCap.ok).toBe(false);
     expect(otherCap.consensusEnforced).toBe(false);
-    expect(otherCap.warnings.map((w) => w.code)).toContain("ZK_BINDING_LABEL_NOT_ENFORCED");
+    expect(codes(otherCap)).toContain("ZK_BINDING_LABEL_NOT_ENFORCED");
     const otherAmount = buildR0Groth16Transaction({
       scripts: { ...real, bindingPolicy: { ...policy, payout: { address: payee, amountSompi: PAYOUT - 1n } } },
       utxo: { transactionId: "11".repeat(32), index: 0, amountSompi: PAYOUT + 20_000_000n },
       destinationAddress: payee,
       networkId: "simnet"
     });
+    expect(otherAmount.ok).toBe(false);
     expect(otherAmount.consensusEnforced).toBe(false);
+    expect(codes(otherAmount)).toContain("ZK_BINDING_LABEL_NOT_ENFORCED");
   });
 });
 
@@ -177,8 +181,8 @@ function unprunedReceipt(): string {
 describe("C-8 · a receipt whose claim was not cross-checked gets no public-network address", () => {
   const receiptHex = unprunedReceipt();
 
-  it("C8-1 the receipt carries its claim unpruned: the cross-check cannot run (simnet still builds, with the warning)", () => {
-    expect(parseR0Groth16Receipt(receiptHex)).toMatchObject({ ok: true, claimEncoding: "UNPRUNED_VALUE" });
+  it("C8-1 the receipt carries its claim unpruned: parseR0Groth16Receipt fails closed and simnet warns NOT_CHECKED", () => {
+    expect(parseR0Groth16Receipt(receiptHex)).toMatchObject({ ok: false, claimEncoding: "UNPRUNED_VALUE" });
     const sim = buildR0Groth16Scripts({ ...official, receiptHex });
     expect(sim.ok, JSON.stringify(sim.issues)).toBe(true);
     expect(sim.receiptClaimCrossCheck).toBe("NOT_CHECKED");

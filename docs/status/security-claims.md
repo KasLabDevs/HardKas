@@ -1,3 +1,8 @@
+---
+title: "Security Claims Matrix"
+description: "What the artifact checks of HardKAS protect against and what they do not: the canonical hash is integrity, not authentication."
+---
+
 # Security Claims Matrix
 
 HardKAS re-verifies every artifact it is handed. When you pass a JSON payload to `tx.simulate()`, `tx.send()`, `tx.sign()` or `replay.verify()`, the SDK recomputes the canonical hash and compares it with the artifact's own `contentHash`.
@@ -8,15 +13,15 @@ That hash is **integrity, not authentication**. It is a SHA-256 of the canonical
 
 | Scenario | Protected? | Explanation |
 | :-- | :-- | :-- |
-| **Edit an artifact without recomputing its hash** | ✅ YES | Any change to a covered field (amount, recipient, inputs…) changes the canonical serialization: `HASH_MISMATCH` during SDK validation. |
+| **Edit an artifact without recomputing its hash** | ✅ YES | Any change to a covered field (amount, recipient, inputs…) changes the canonical serialization: `ARTIFACT_HASH_MISMATCH` during SDK validation. |
 | **Edit an artifact AND recompute its hash** | ⚠️ PARTLY | The hash check passes (the hash has no key). The forgery is caught elsewhere, or not at all. A changed signed transaction no longer matches its signatures, and the node rejects it. A signed transaction that diverges from its plan is refused (`SIGNED_PLAN_MISMATCH`). A real send requires that plan by default (`SEND_PLAN_UNRESOLVED`; see [send routes](send-routes-security.md)). An artifact whose hash version predates the lineage being hashed (v1–v3) is refused by strict verification (`MIGRATION_REQUIRED`). |
 | **Mutate artifact JSON (key order, whitespace)** | ✅ YES | The canonical serialization sorts keys and normalizes strings, so equivalent JSON hashes the same. A real change changes the hash. |
 | **Replay inconsistency** | ✅ YES (deterministic re-execution) | The Replay Engine re-runs a recorded execution and compares the result with the receipt it emitted. It checks determinism; it proves nothing about the network. |
 | **Unicode look-alikes** | ✅ YES | Strings are normalized (NFC, `\r\n` → `\n`) before hashing (canonical hash v3+). Byte-different but canonically equal strings hash the same. |
 | **Prototype pollution** | ✅ YES | Only plain objects are serialized: prototype chains are not followed when artifacts are validated. |
-| **Path traversal escape** | ✅ YES | Artifact reads, writes and verification paths stay inside the project directory. |
+| **Path traversal escape** | ✅ YES | Artifact reads, writes and verification paths stay inside the workspace (project) directory, not only `.hardkas/`: `tx plan --out plan.json` writes in the project root. |
 
-What each public send route checks before a broadcast is listed in [Send routes: what each one checks before a broadcast](send-routes-security.md). This covers the SDK, the CLI, `escrow rescue-v1`, the dev-server and the toolkit wallet.
+What each public send route checks before a broadcast is listed in [Send routes: what each one checks before a broadcast](send-routes-security.md). This covers the SDK, the CLI (payments, HD wallets, escrow, covenants, KCC-20 tokens, ZK spends, `escrow rescue-v1`), the dev-server and the toolkit wallet.
 
 ## What is NOT Protected?
 

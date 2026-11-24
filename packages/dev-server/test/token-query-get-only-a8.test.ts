@@ -17,15 +17,17 @@ const token: string = (server as any).token;
 afterEach(() => vi.restoreAllMocks());
 
 describe("A8 · ?token= on GET only, constant-time comparison", () => {
-  it("GET with ?token= → accepted (the SSE / EventSource case)", async () => {
-    const res = await app.request(`/api/health?token=${token}`, { headers: { host } });
+  it("GET with ?token= on a stream route → accepted (the SSE / EventSource case)", async () => {
+    // DEV-SERVER-LOCAL-1 (M3): `?token=` is taken on the stream routes only; any other route needs the header
+    const res = await app.request(`/api/artifacts/stream?token=${token}`, { headers: { host } });
+    await res.body?.cancel().catch(() => {});
     expect(res.status).toBe(200);
   });
 
   it("POST with only ?token= (CSRF header present) → 401, and the answer says to use Authorization: Bearer", async () => {
     const res = await app.request(`/api/session/start?token=${token}`, { method: "POST", headers: { host, "X-Hardkas-Request": "true" } });
     expect(res.status).toBe(401);
-    expect((await res.json()).error).toMatch(/GET requests only.*Authorization: Bearer/);
+    expect((await res.json()).error).toMatch(/stream routes only.*Authorization: Bearer/);
   });
 
   it("POST with Authorization: Bearer → past the token check", async () => {

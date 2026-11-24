@@ -37,6 +37,12 @@ vi.mock("@hardkas/kaspa-rpc", () => ({
   waitForKaspaRpcReady: vi.fn().mockResolvedValue({ ready: true })
 }));
 
+// Mock the identity check: unmocked, start() dialled the real 127.0.0.1:18210 after `docker run`, so these cases
+// depended on whatever listened there (a Docker Desktop that accepts and never answers made them time out at 5 s)
+vi.mock("../src/identity.js", () => ({
+  verifyNodeIdentity: vi.fn().mockResolvedValue({ verified: true, problems: [] })
+}));
+
 // REMED-CLOSE · test isolation: a runner without `cwd` creates its data directory (.hardkas/kaspad) under the process's
 // working directory; this file runs in a temporary one of its own, never the repository root.
 let cwdBefore = "";

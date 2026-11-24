@@ -1,6 +1,8 @@
 {
   "name": "@hardkas/cli",
-  "version": "0.13.0-rc.3",
+  "version": "1.0.0",
+  "description": "HardKAS CLI for Kaspa L1: create a project, run a local rusty-kaspa simnet, plan, sign and send transactions, compile SilverScript and verify every step.",
+  "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "cli", "silverscript", "covenants", "toccata", "simnet", "localnet", "testnet", "rusty-kaspa", "kaspa-wasm"],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -47,20 +49,16 @@
   "dependencies": {
     "@hardkas/accounts": "workspace:*",
     "@hardkas/artifacts": "workspace:*",
-    "@hardkas/bridge-local": "workspace:*",
     "@hardkas/config": "workspace:*",
     "@hardkas/core": "workspace:*",
     "@hardkas/dev-server": "workspace:*",
-    "@hardkas/escrow": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/localnet": "workspace:*",
-    "@hardkas/node-orchestrator": "workspace:*",
     "@hardkas/node-runner": "workspace:*",
     "@hardkas/observability": "workspace:*",
     "@hardkas/query": "workspace:*",
     "@hardkas/query-store": "workspace:*",
     "@hardkas/sdk": "workspace:*",
-    "@hardkas/sessions": "workspace:*",
     "@hardkas/simulator": "workspace:*",
     "@hardkas/testing": "workspace:*",
     "@hardkas/tx-builder": "workspace:*",
@@ -70,7 +68,6 @@
 
     "fflate": "^0.8.3",
     "picocolors": "^1.1.1",
-    "zod": "^4.6.7",
     "tsx": "^4.19.2"
   },
   "devDependencies": {
@@ -92,7 +89,7 @@
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/cli#readme",
+  "homepage": "https://hardkas.dev/docs/",
   "publishConfig": {
     "access": "public"
   }

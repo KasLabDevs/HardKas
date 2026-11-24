@@ -200,7 +200,7 @@ describe("L2-EXT · the CLI with the l2 extension installed in the project", () 
     ["does not answer eth_chainId", "silent", /^running \(PID \d+\) but not answering eth_chainId on 127\.0\.0\.1:\d+$/]
   ])("doctor l2 · l2.node · our own node (identity verified) that %s: not ok, says so", { timeout: 300_000 }, async (_name, mode, detail) => {
     const net = await import("node:net");
-    const { startManagedProcess, stopManagedProcess, getManagedProcessStatus } = await import("@hardkas/node-orchestrator");
+    const { startManagedProcess, stopManagedProcess, getManagedProcessStatus } = await import("@hardkas/node-runner");
     const { anvilStateDir, ANVIL_PROCESS_ID } = await import("../src/node/anvil.js");
     const port = await new Promise<number>((resolve) => {
       const s = net.createServer();

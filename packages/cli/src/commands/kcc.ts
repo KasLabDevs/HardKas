@@ -6,6 +6,7 @@ import { getOutput } from "../output.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 import { UI } from "../ui.js";
 import { readExactJson } from "./silver-dev-framework.js";
+import { broadcastYesHelp, requireBroadcastConfirmation } from "../broadcast-confirmation.js";
 
 /**
  * `hardkas kcc` and `hardkas kcc20` — the KCC conventions of kaspanet/kccs (KCC-1, KCC-2 and KCC-20 are Final) off
@@ -23,6 +24,7 @@ import { readExactJson } from "./silver-dev-framework.js";
  */
 
 const out = () => getOutput();
+const KCC20_NOTHING_DONE = "Nothing was read, signed, broadcast or written; no key was read and no node was contacted.";
 const fail = (code: string, message: string, exitCode = HardkasExitCode.RUNTIME_FAILURE): never => {
   throw new HardkasCliError(code, message, { exitCode });
 };
@@ -298,12 +300,15 @@ export function registerKccCommands(program: Command) {
     .option("--timeout <seconds>", "Confirmation timeout", "120")
     .option("--password-env <env>", PASSWORD_ENV_HELP)
     .option("--password-stdin", PASSWORD_STDIN_HELP, false)
+    .option("--yes", broadcastYesHelp("the deploy"), false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
       await refuseMainnetFirst(opts.network, "sign", "kcc20 deploy");
       const kit = (await import("./silver.js")).silverOnChainKit;
       const core = await import("@hardkas/core");
       const target = await kit.silverTarget(opts);
+      // BETA-FIX W2 · AUX-11 (tx send's rule): off simnet nothing is read, signed or sent without --yes
+      requireBroadcastConfirmation({ command: "kcc20 deploy", network: target.network, yes: opts.yes, json: opts.json, nothingDone: KCC20_NOTHING_DONE });
       const S = await kit.schemas();
       const record = await kit.readRecord(file, S.SilverCompileV1);
       kit.assertCompiledForCanonical(record, file, target.network);
@@ -398,7 +403,10 @@ export function registerKccCommands(program: Command) {
     .requiredOption("--from <account>", "The holder whose token outputs are spent and who signs them (local key); the change in tokens goes back to it")
     .option("--to <spec>", "A recipient, in output order (repeatable): '<owner>=<amount>', the owner an account of this workspace, a P2PK address or a 32-byte x-only public key (hex)", collect, [])
     .option("--input <outpoint>", "Spend this token output 'txid:index' (repeatable, the leader first); default: --from's live outputs, largest first, as few as cover the amounts", collect, [])
-    .option("--funder <account>", "Pay the fee from this account's coins (local key); default: the tokens' KAS (the first new output keeps what the fee leaves)")
+    .option(
+      "--funder <account>",
+      "Pay the fee from this account's coins (local key). Default: the sender's side pays, never a recipient's output: --from's token change output keeps what the fee leaves; without token change, --from's own KAS coins pay it; when neither can, the transfer is refused before anything is signed (KCC20_FEE_SOURCE_REQUIRED: name a funder)"
+    )
     .option("--artifact <file>", "The program's KCC-20 artifact (kcc20.json); default: KCC-20's default configuration")
     .option("--fee <sompi>", "Fee in sompi: at least the node's floor for this transaction (the floor when omitted)")
     .option("--max-fee <sompi>", "The plan's fee limit (default: the fee it pays)")
@@ -409,12 +417,15 @@ export function registerKccCommands(program: Command) {
     .option("--timeout <seconds>", "Confirmation timeout", "120")
     .option("--password-env <env>", PASSWORD_ENV_HELP)
     .option("--password-stdin", PASSWORD_STDIN_HELP, false)
+    .option("--yes", broadcastYesHelp("the transfer"), false)
     .option("--json", "Output as JSON", false)
     .action(async (opts: any) => {
       await refuseMainnetFirst(opts.network, "sign", "kcc20 transfer");
       const kit = (await import("./silver.js")).silverOnChainKit;
       const core = await import("@hardkas/core");
       const target = await kit.silverTarget(opts);
+      // BETA-FIX W2 · AUX-11 (tx send's rule): off simnet nothing is read, signed or sent without --yes
+      requireBroadcastConfirmation({ command: "kcc20 transfer", network: target.network, yes: opts.yes, json: opts.json, nothingDone: KCC20_NOTHING_DONE });
       const covenantId = kit.covenantIdOption(opts.covenant);
       const to = ownerAmounts(opts.to as string[], "--to");
       if (to.length === 0) fail("KCC20_TRANSFER_INVALID", "give the recipients: --to <owner>=<amount>, repeatable", HardkasExitCode.USAGE_ERROR);
@@ -476,6 +487,8 @@ export function registerKccCommands(program: Command) {
           txId: r.txId,
           status: opts.wait ? "confirmed" : "submitted",
           feeSompi: r.plan.estimatedFeeSompi,
+          // BETA-FIX W2: who paid the fee (the sender's token change, the sender's own coins, or the named funder)
+          ...(r.feeSource ? { feeSource: r.feeSource } : {}),
           verdict: { verdict: r.verdict.accepted ? "STRUCTURALLY_VALID" : "REJECTED", path: r.verdict.path, reason: r.verdict.reason },
           inputs: r.inputs.map((i: any) => ({ outpoint: i.outpoint, role: i.role, signer: i.signer, kasSompi: i.kasSompi, state: stateJson(i.state) })),
           outputs: r.outputs.map((o: any, k: number) => ({
@@ -492,7 +505,8 @@ export function registerKccCommands(program: Command) {
         });
         if (opts.json) return out().writeJson(summary);
         out().writeLine(`${pc.green("Tokens transferred")} ${covenantId}`);
-        out().writeLine(`  tx ${r.txId} (${summary.status}), ${r.inputs.length} input(s) -> ${r.outputs.length} output(s), fee ${summary.feeSompi} sompi`);
+        const paidBy = r.feeSource?.kind === "token-change" ? "the sender's token change" : r.feeSource?.kind === "sender-coins" ? `${r.feeSource.account}'s own coins` : r.feeSource?.kind === "funder" ? `funder ${r.feeSource.account}` : undefined;
+        out().writeLine(`  tx ${r.txId} (${summary.status}), ${r.inputs.length} input(s) -> ${r.outputs.length} output(s), fee ${summary.feeSompi} sompi${paidBy ? ` paid by ${paidBy}` : ""}`);
         for (const o of summary.outputs) out().writeLine(`  ${o.outpoint} ${o.state.amount} to ${o.state.owner}`);
       } finally {
         await rpc.close?.();

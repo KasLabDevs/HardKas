@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { isMainnetNetworkId } from "@hardkas/core";
 import {
   TxPlanArtifact,
   SignedTxArtifact,
@@ -110,7 +111,8 @@ export class HardkasFixtureSigner implements ExternalHardkasSigner {
 
   constructor(networkId: string = "simnet", fixtureName: HardkasFixtureName | string = "default") {
     this.networkId = networkId;
-    if (networkId === "mainnet") {
+    // any spelling of mainnet (`kaspa-mainnet`, `Mainnet`, ...), not only the exact word
+    if (isMainnetNetworkId(networkId)) {
       throw new Error("FixtureSigner cannot be used on mainnet.");
     }
     if (!(fixtureName in HARDKAS_FIXTURE_REGISTRY)) {
@@ -145,7 +147,7 @@ export class HardkasFixtureSigner implements ExternalHardkasSigner {
   }
 
   async signTransaction(plan: TxPlanArtifact): Promise<SignedTxArtifact> {
-    if (plan.networkId === "mainnet") {
+    if (isMainnetNetworkId(plan.networkId)) {
       throw new Error("FixtureSigner refuses to sign mainnet transactions.");
     }
     const kaspa = await this.loadKaspa();

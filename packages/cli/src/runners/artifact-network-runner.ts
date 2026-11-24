@@ -138,6 +138,15 @@ export async function checkArtifactOnNetwork(artifact: unknown, opts: ArtifactNe
       { policy, node }
     );
   }
+  // a node that ANSWERED but did not say which network it serves (the transport refuses it, NODE_NETWORK_UNKNOWN) is an
+  // identity that could not be proven, not an unreachable node
+  if (!record.observed.server && record.problems.some((p: string) => /did not say which network it serves|NODE_NETWORK_UNKNOWN/.test(p))) {
+    return notCheckedNetworkVerification(
+      "NODE_IDENTITY_UNVERIFIED",
+      `the node did not prove its identity: ${record.problems.join("; ")}`,
+      { policy, node }
+    );
+  }
   if (!record.observed.server) {
     return notCheckedNetworkVerification("NODE_UNREACHABLE", `no node answered at ${node.endpoint}: ${record.problems.join("; ")}`, { policy, node });
   }

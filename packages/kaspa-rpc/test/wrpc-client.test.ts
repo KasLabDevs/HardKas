@@ -29,9 +29,9 @@ describe("KaspaWrpcClient", () => {
       await client.connect(200);
       const result = await client.ping();
       expect(result).toBe(false);
-    } catch {
-      // Connection refused is expected
-      expect(true).toBe(true);
+    } catch (e) {
+      // Only a connection failure is expected here; any other error fails the test (it used to pass on any exception)
+      expect(String((e as Error)?.message ?? e)).toMatch(/connect|refused|timeout|timed out|unable|closed/i);
     } finally {
       client.disconnect();
     }
@@ -44,7 +44,7 @@ describe("KaspaWrpcClient", () => {
 
   it("requests by method name through the official client, with the node's error text", async () => {
     const rpc = fakeOfficialRpc({
-      getServerInfo: () => ({ serverVersion: "2.1.0", virtualDaaScore: 12n }),
+      getServerInfo: () => ({ networkId: "simnet", serverVersion: "2.1.0", virtualDaaScore: 12n }),
       getBlockDagInfo: () => {
         throw nodeError("internal error");
       }
@@ -53,7 +53,7 @@ describe("KaspaWrpcClient", () => {
     await client.connect(200);
 
     expect(rpc.urls).toEqual(["ws://127.0.0.1:18210"]);
-    expect(await client.request("getServerInfoRequest")).toEqual({ serverVersion: "2.1.0", virtualDaaScore: 12 });
+    expect(await client.request("getServerInfoRequest")).toEqual({ networkId: "simnet", serverVersion: "2.1.0", virtualDaaScore: 12 });
     await expect(client.getBlockDagInfo()).rejects.toThrow(/^internal error$/);
     expect(await client.ping()).toBe(true);
     client.disconnect();

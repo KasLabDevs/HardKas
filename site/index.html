@@ -4,22 +4,23 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>HardKAS – Kaspa L1 IDE, SilverScript &amp; Covenant Framework</title>
-<meta content="Build, compile, test and debug Kaspa L1 covenants with HardKAS IDE. SilverScript tooling, local simnet, CLI and reproducible transaction artifacts." name="description"/>
+<title>HardKAS – Kaspa L1 development framework: CLI, SDK and simnet</title>
+<meta content="Open-source CLI, TypeScript SDK and IDE for Kaspa L1: local rusty-kaspa simnet, SilverScript and Toccata covenant workflows, verifiable transaction steps." name="description"/>
 <link href="https://hardkas.dev/" rel="canonical"/>
+<link href="/docs/img/favicon.ico" rel="icon"/>
 
 <!-- Open Graph / Social Previews -->
 <meta content="website" property="og:type"/>
 <meta content="HardKAS" property="og:site_name"/>
 <meta content="https://hardkas.dev/" property="og:url"/>
-<meta content="HardKAS – Kaspa L1 IDE, SilverScript &amp; Covenant Framework" property="og:title"/>
-<meta content="Build, compile, test and debug Kaspa L1 covenants with HardKAS IDE. SilverScript tooling, local simnet, CLI and reproducible transaction artifacts." property="og:description"/>
+<meta content="HardKAS – Kaspa L1 development framework: CLI, SDK and simnet" property="og:title"/>
+<meta content="Open-source CLI, TypeScript SDK and IDE for Kaspa L1: local rusty-kaspa simnet, SilverScript and Toccata covenant workflows, verifiable transaction steps." property="og:description"/>
 <meta content="https://hardkas.dev/docs/img/ide/workbench.png" property="og:image"/>
 
 <!-- Twitter / X Cards -->
 <meta content="summary_large_image" name="twitter:card"/>
-<meta content="HardKAS – Kaspa L1 IDE, SilverScript &amp; Covenant Framework" name="twitter:title"/>
-<meta content="Build, compile, test and debug Kaspa L1 covenants with HardKAS IDE. SilverScript tooling, local simnet, CLI and reproducible transaction artifacts." name="twitter:description"/>
+<meta content="HardKAS – Kaspa L1 development framework: CLI, SDK and simnet" name="twitter:title"/>
+<meta content="Open-source CLI, TypeScript SDK and IDE for Kaspa L1: local rusty-kaspa simnet, SilverScript and Toccata covenant workflows, verifiable transaction steps." name="twitter:description"/>
 <meta content="https://hardkas.dev/docs/img/ide/workbench.png" name="twitter:image"/>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -753,23 +754,40 @@ summary:hover { color: var(--accent); }
       "url": "https://hardkas.dev/",
       "name": "HardKAS",
       "alternateName": "HardKAS Documentation",
-      "description": "Local-first development framework, transaction simulator, and visual IDE for Kaspa L1.",
-      "inLanguage": "en-US"
+      "description": "Open-source development framework for Kaspa L1: CLI, TypeScript SDK and IDE.",
+      "inLanguage": "en",
+      "publisher": { "@id": "https://hardkas.dev/#org" }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://hardkas.dev/#org",
+      "name": "KasLabDevs",
+      "alternateName": "HardKAS maintainers",
+      "url": "https://hardkas.dev/",
+      "logo": "https://hardkas.dev/docs/img/logo.png",
+      "sameAs": [
+        "https://github.com/KasLabDevs",
+        "https://x.com/HardKASOfficial",
+        "https://www.youtube.com/@kaslabdevs",
+        "https://www.npmjs.com/org/hardkas"
+      ]
     },
     {
       "@type": "SoftwareApplication",
       "@id": "https://hardkas.dev/#software",
       "name": "HardKAS",
+      "url": "https://hardkas.dev/",
       "applicationCategory": "DeveloperApplication",
       "operatingSystem": "Linux, macOS, Windows",
-      "softwareVersion": "0.13.0-rc.3",
+      "softwareVersion": "1.0.0",
       "license": "https://opensource.org/licenses/MIT",
-      "description": "Local-first development framework, transaction simulator, and visual IDE for Kaspa L1. Plan, sign, simulate, and test native transactions, SilverScript contracts, and covenants with verifiable artifacts.",
-      "author": {
-        "@type": "Organization",
-        "name": "KasLabDevs",
-        "url": "https://github.com/KasLabDevs"
-      }
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "downloadUrl": "https://www.npmjs.com/package/@hardkas/cli",
+      "softwareHelp": "https://hardkas.dev/docs/",
+      "screenshot": "https://hardkas.dev/docs/img/ide/workbench.png",
+      "description": "Open-source development framework for Kaspa L1: plan, sign, send and verify transactions with a CLI and a TypeScript SDK, on a simulated ledger or a local rusty-kaspa simnet node, with SilverScript and Toccata covenant workflows and verifiable artifacts.",
+      "author": { "@id": "https://hardkas.dev/#org" }
     },
     {
       "@type": "SoftwareSourceCode",
@@ -778,7 +796,8 @@ summary:hover { color: var(--accent); }
       "codeRepository": "https://github.com/KasLabDevs/HardKas",
       "programmingLanguage": ["TypeScript", "Rust"],
       "runtimePlatform": "Node.js 24.22.1",
-      "license": "https://opensource.org/licenses/MIT"
+      "license": "https://opensource.org/licenses/MIT",
+      "author": { "@id": "https://hardkas.dev/#org" }
     }
   ]
 }
@@ -803,6 +822,8 @@ summary:hover { color: var(--accent); }
 <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" fill="currentColor"></path>
 </svg>
 </a>
+<!-- SEO-2026-11-21: hardkas-one-doc.pdf is not in site/, so this button led to the landing page (HTTP 200). Put the PDF
+in site/ (the build copies .pdf files) and remove these comment markers to bring the button back.
 <a aria-label="Download HardKAS One‑Doc" class="github" href="hardkas-one-doc.pdf" rel="noopener" target="_blank" title="Download HardKAS One‑Doc">
 <svg aria-hidden="true" class="github-icon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24">
 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -811,6 +832,7 @@ summary:hover { color: var(--accent); }
 <path d="M9.5 14.5 12 17l2.5-2.5"></path>
 </svg>
 </a>
+-->
 </div>
 <button aria-expanded="false" aria-label="Open navigation" class="mobile-nav" type="button">
           ☰
@@ -860,10 +882,10 @@ summary:hover { color: var(--accent); }
 <a class="button primary" href="https://github.com/KasLabDevs/HardKasIDE/releases/latest" rel="noreferrer" target="_blank">Download IDE</a>
 <a class="hero-ide-more" href="/ide/">Explore IDE</a>
 <p class="hero-ide-meta">0.3.0 / Windows, macOS, Linux</p>
-</div><h1>Execution-safe development for Kaspa.</h1>
+</div><h1>Execution-safe development for Kaspa L1.</h1>
 <p class="hero-desc">
-                HardKAS is a local-first developer environment for Kaspa L1, including
-                the <strong>SilverScript and covenant</strong> workflows of the Toccata upgrade.
+                HardKAS is an open-source, local-first development framework for Kaspa L1 — a CLI and a
+                TypeScript SDK — including the <strong>SilverScript and covenant</strong> workflows of the Toccata upgrade.
               </p>
 <div class="note" style="margin-top: 1rem; border: 1px solid var(--accent); padding: 1rem; border-radius: 4px; background: rgba(var(--accent-rgb), 0.1);">
 <strong>HardKAS has separate execution worlds.</strong><br/>
@@ -882,7 +904,7 @@ summary:hover { color: var(--accent); }
 <a class="button" href="https://github.com/KasLabDevs/HardKas" rel="noreferrer" target="_blank">GitHub</a>
 </div>
 <div class="meta">
-<span class="badge accent"><span class="version-string">0.13.0-rc.3</span></span>
+<span class="badge accent"><span class="version-string">1.0.0</span></span>
 <span class="badge">Kaspa Native</span>
 <span class="badge">Toccata-aware</span>
 <span class="badge">Local-first</span>
@@ -902,7 +924,7 @@ summary:hover { color: var(--accent); }
 <pre><span class="cmd">hardkas</span> localnet start <span class="flag">--toccata</span>
 <span class="cmd">hardkas</span> accounts real generate <span class="flag">--name</span> miner <span class="flag">--unsafe-plaintext</span> <span class="flag">--yes</span>
 <span class="cmd">hardkas</span> accounts real generate <span class="flag">--name</span> ana <span class="flag">--unsafe-plaintext</span> <span class="flag">--yes</span>
-<span class="cmd">hardkas</span> localnet fund miner <span class="flag">--keep-miner</span>
+<span class="cmd">hardkas</span> localnet fund miner
 <span class="cmd">hardkas</span> tx plan <span class="flag">--from</span> miner <span class="flag">--to</span> ana <span class="flag">--amount</span> 10 <span class="flag">--network</span> simnet <span class="flag">--out</span> plan.json
 <span class="cmd">hardkas</span> tx sign plan.json <span class="flag">--account</span> miner <span class="flag">--out</span> signed.json
 <span class="cmd">hardkas</span> tx send signed.json <span class="flag">--network</span> simnet <span class="flag">--yes</span>
@@ -916,7 +938,7 @@ summary:hover { color: var(--accent); }
 </div>
 </div>
 <div class="warning">
-<strong>Alpha boundary (<span class="version-string">0.13.0-rc.3</span>).</strong> HardKAS is developer
+<strong>Scope (<span class="version-string">1.0.0</span>).</strong> HardKAS is developer
                 infrastructure, not production custody software. It confines artifact IDs and
                 store paths to the workspace, refuses mainnet signing and broadcast, and verifies
                 artifact lineage strictly.
@@ -1037,6 +1059,7 @@ Account kind = synthetic · target mode = rpc<br/>
 <section id="capabilities">
 <h2>Capability Honesty</h2>
 <p>HardKAS states what it claims and what it does not. Its release claims are generated from the code that enforces them (<a href="https://github.com/KasLabDevs/HardKas/blob/main/docs/status/claims.generated.md" rel="noreferrer" target="_blank">claims.generated.md</a>) and use these values:</p>
+<p>By feature, with where each one was checked: <a href="/docs/start/what-works/">What works in this release</a> · <a href="/docs/status/claims.generated/">Release claims</a>.</p>
 <table>
 <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
 <tbody>
@@ -1053,6 +1076,7 @@ Account kind = synthetic · target mode = rpc<br/>
 <h2>SilverScript &amp; covenants (Toccata)</h2>
 <p><strong>What works today on the Toccata upgrade, and what does not.</strong></p>
 <p>Toccata is the Kaspa hard fork, active on mainnet since 30 June 2026, that added transaction v1, covenants and SilverScript. HardKAS drives the official tools (silverc v1.0.0, rusty-kaspa, kaspa-wasm) instead of imitating them. The statuses follow the generated release claims; the proofs run against a local simnet node.</p>
+<p>Guides: <a href="/docs/guides/silverscript-covenants/">SilverScript and Toccata covenants</a> · <a href="/docs/start/silverscript-covenants/">try them on your own simnet</a> · <a href="/docs/guides/testing-kaspa-covenants/">testing Kaspa covenants</a>.</p>
 <table>
 <thead><tr><th>Feature</th><th>Status</th><th>Command</th></tr></thead>
 <tbody>
@@ -1061,10 +1085,10 @@ Account kind = synthetic · target mode = rpc<br/>
 <tr><td>Relative timelock spend</td><td>🟢 REAL_NODE_EVIDENCE</td><td><code>silver spend --sequence</code></td></tr>
 <tr><td>1:1 covenant: genesis and auth-bound transitions (transaction v1)</td><td>🟢 REAL_NODE_EVIDENCE</td><td><code>silver covenant genesis</code> · <code>silver covenant transition</code></td></tr>
 <tr><td>General covenant support</td><td>⚪ NOT_CLAIMED</td><td>—</td></tr>
-<tr><td>Contract tests on the official SilverScript runner (script engine only, not transaction validity), or with <code>--on-node</code> as real transactions judged by a Kaspa node</td><td>🟡 EXPERIMENTAL</td><td><code>silver test</code></td></tr>
-<tr><td>Transaction v1</td><td>🟡 PARTIAL: built only by the covenant commands; <code>tx plan</code> builds v0</td><td>—</td></tr>
-<tr><td>Compute budget</td><td>🟡 PARTIAL: set by hand with an explicit fee; no estimator exists</td><td><code>--compute-budget</code> · <code>--fee</code></td></tr>
-<tr><td>Fee estimation</td><td>🟡 PARTIAL: automatic for standard payments (Generator); explicit for v1</td><td><code>tx plan</code></td></tr>
+<tr><td>Contract tests on a locally built SilverScript runner (cli-debugger; UNVERIFIED, since upstream publishes no runner binary; script engine only, not transaction validity), or with <code>--on-node</code> as real transactions judged by a Kaspa node</td><td>🟡 EXPERIMENTAL</td><td><code>silver test</code></td></tr>
+<tr><td>Transaction v1</td><td>🟡 PARTIAL: built by the covenant commands, <code>silver engine</code>, <code>silver deploy|spend --tx-version 1</code> and the <code>kcc20</code> commands; <code>tx plan</code> builds v0</td><td>—</td></tr>
+<tr><td>Compute budget</td><td>🟡 PARTIAL: certified defaults per entry, or <code>--compute-budget estimate</code> (rusty-kaspa's upper bound); the fee defaults to the node's floor</td><td><code>--compute-budget</code> · <code>--fee</code></td></tr>
+<tr><td>Fee estimation</td><td>🟡 PARTIAL: automatic for standard payments (Generator; the node's fee estimate on real networks); v1 commands default to the node's fee floor</td><td><code>tx plan</code></td></tr>
 <tr><td>Lane metadata</td><td>⚪ NOT_CLAIMED: schema field only, planning ignores it</td><td>—</td></tr>
 <tr><td>PSKT (partially signed transactions)</td><td>🟡 EXPERIMENTAL: no operation available from the CLI by default</td><td>—</td></tr>
 <tr><td>Transaction tracing</td><td>🟡 PARTIAL: traces are written; the <code>tx trace</code> command is disabled</td><td>—</td></tr>
@@ -1075,7 +1099,7 @@ Account kind = synthetic · target mode = rpc<br/>
 </section>
 <section id="architecture">
 <h2>Architecture</h2>
-<p>HardKAS is organised in dependency levels: a lower level never depends on a higher one. This is a convention; no tooling enforces it yet. Only the main packages are shown (the repository has 35).</p>
+<p>HardKAS is organised in dependency levels: a lower level never depends on a higher one. This is a convention; no tooling enforces it yet. Only the main packages are shown (the repository has 31).</p>
 <div class="diagram">
 <div class="box">
 <h3>Level 0 (Foundations)</h3>
@@ -1102,6 +1126,7 @@ Account kind = synthetic · target mode = rpc<br/>
 <section id="quickstart">
 <h2>Quickstart</h2>
 <p>A first run in the simulator, with no node and no Docker: create a project, then plan, sign and send a payment and replay it from its artifacts. You need Node.js 24.22.1 (exactly: the version HardKAS pins and tests); <code>hardkas init</code> downloads the pinned kaspa-wasm.</p>
+<p>Full guides: <a href="/docs/start/quickstart/">5-minute quickstart</a> · <a href="/docs/start/simnet-node/">run your own Kaspa simnet node</a> · <a href="/docs/start/first-transaction/">your first transaction</a>.</p>
 <div class="codeblock">
 <div class="codebar">execution-safe workflow <button class="copy" data-copy="hardkas init\nhardkas simulator fund alice --amount 100\nhardkas tx plan --from alice --to bob --amount 10 --network simulated --out tx-plan.json\nhardkas tx sign tx-plan.json --account alice --out tx-signed.json\nhardkas tx send tx-signed.json --network simulated --yes">Copy</button></div>
 <pre><span class="comment"># 0. Create the project and install the pinned kaspa-wasm</span>
@@ -1194,7 +1219,7 @@ Account kind = synthetic · target mode = rpc<br/>
 </section>
 <section id="examples">
 <h2>Examples &amp; Builder Labs</h2>
-<p><em>Real commands with their real output, captured on 0.12.0-rc.29 in a fresh simulator project after the Quickstart.</em></p>
+<p><em>Real commands with their real output, captured in a fresh simulator project after the Quickstart.</em></p>
 <p>The repository also has reference apps built with HardKAS (wallet backends, a checkout, a local indexer); they are outside the core product.</p>
 <div class="accordion">
 <details open="">
@@ -1717,9 +1742,10 @@ hardkas chaos replay --run-seed 42">
 <h2>CLI reference</h2>
 <p>
             The most used commands, with what each argument accepts. Every card was checked
-            against the code of 0.13.0-rc.3. Add <code>--help</code> to any command to list all its
+            against the code of 1.0.0. Add <code>--help</code> to any command to list all its
             options. The complete reference, generated from the command tree, is
-            <a href="https://github.com/KasLabDevs/HardKas/blob/main/docs/reference/cli.md" rel="noreferrer" target="_blank">docs/reference/cli.md</a>.
+            <a href="https://github.com/KasLabDevs/HardKas/blob/main/docs/reference/cli.md" rel="noreferrer" target="_blank">docs/reference/cli.md</a>,
+            and command group by command group, the <a href="/docs/reference/cli/">CLI reference</a>.
           </p>
 <div class="accordion">
 <details open="">
@@ -1942,7 +1968,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--network &lt;name&gt;</code></td>
-<td><code>simulated</code> or <code>local</code> read the simulator; simnet, devnet or testnet-10 ask a node on 127.0.0.1 (default simnet, even in a simulator project); mainnet is never contacted (<code>MAINNET_CONNECTION_DISABLED</code>)</td>
+<td><code>simulated</code> or <code>local</code> read the simulator; simnet, devnet or testnet-10 ask a node on 127.0.0.1 (default: the workspace's default target); mainnet is never contacted (<code>MAINNET_CONNECTION_DISABLED</code>)</td>
 </tr>
 <tr>
 <td><code>--url &lt;url&gt;</code></td>
@@ -1963,7 +1989,7 @@ hardkas chaos replay --run-seed 42">
 <table class="flags">
 <tr>
 <td><code>--force</code></td>
-<td>Replace an existing index (keystore files stay on disk)</td>
+<td>Replace the store after backing it up; a store that holds accounts also needs <code>--discard-accounts</code></td>
 </tr>
 </table>
 </div>
@@ -2075,7 +2101,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas localnet fund &lt;identifier&gt; --amount 1000</code><span>Mine to an account on the local node until its mature balance grows by the amount, then stop the miner. With <code>--treasury</code>, transfer exactly that amount from the localnet treasury instead.</span>
+<code>hardkas localnet fund &lt;identifier&gt; --amount 1000</code><span>Mine to an account on the local node until its mature balance grows by the amount; the localnet then keeps producing blocks (<code>--stop-miner</code> leaves it stopped). With <code>--treasury</code>, transfer exactly that amount from the localnet treasury instead.</span>
 <table class="flags">
 <tr>
 <td><code>&lt;identifier&gt;</code></td>
@@ -2091,7 +2117,11 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--keep-miner</code></td>
-<td>Leave the miner running; a missed target is reported as pending instead of failing</td>
+<td>Keep mining directly to the funded account after funding</td>
+</tr>
+<tr>
+<td><code>--stop-miner</code></td>
+<td>Stop the miner after funding instead of leaving the chain active</td>
 </tr>
 </table>
 </div>
@@ -2155,7 +2185,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--fee-rate &lt;sompiPerMass&gt;</code></td>
-<td>Whole sompi per gram of mass (default 1 in the simulator, 100 on real networks: the network minimum, not a live estimate)</td>
+<td>Whole sompi per gram of mass, at least 1 (default 1 in the simulator; on real networks the node's live fee estimate, bounded by maxFeeRate)</td>
 </tr>
 <tr>
 <td><code>--change &lt;accountOrAddress&gt;</code></td>
@@ -2197,7 +2227,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas tx send &lt;signedPath&gt;</code><span>Send a signed artifact: simulated in the simulator, broadcast to its recorded network otherwise. Mainnet broadcast is always blocked.</span>
+<code>hardkas tx send &lt;signedPath&gt;</code><span>Send a signed artifact: simulated in the simulator, broadcast to its recorded network otherwise. Mainnet broadcast is always blocked. With <code>--wait</code>, it then waits for CONFIRMED on the same node, as <code>tx wait</code> does.</span>
 <table class="flags">
 <tr>
 <td><code>&lt;signedPath&gt;</code></td>
@@ -2263,7 +2293,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>-n, --network &lt;network&gt;</code></td>
-<td>Network whose node observes (default: the one recorded at submission)</td>
+<td>Network whose node observes (default: the one recorded at submission); <code>--url</code> names another node, as in <code>tx send</code></td>
 </tr>
 </table>
 </div>
@@ -2325,7 +2355,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas silver deploy &lt;record&gt; --from &lt;account&gt; --amount &lt;kas&gt;</code><span>Fund the contract's P2SH output on the canonical simnet localnet.</span>
+<code>hardkas silver deploy &lt;record&gt; --from &lt;account&gt; --amount &lt;kas&gt;</code><span>Fund the contract's P2SH output on a Kaspa node (the canonical localnet by default).</span>
 <table class="flags">
 <tr>
 <td><code>&lt;record&gt;</code></td>
@@ -2345,7 +2375,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--network &lt;network&gt;</code></td>
-<td>Only <code>simnet</code> (default); mainnet is refused</td>
+<td>The workspace's, else <code>simnet</code>; <code>testnet-&lt;n&gt;</code> needs experimental + <code>network.allowPublic</code>; mainnet is refused</td>
 </tr>
 <tr>
 <td><code>--wait</code></td>
@@ -2383,7 +2413,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas silver covenant genesis &lt;record&gt; --from &lt;account&gt; --amount &lt;kas&gt; --compute-budget &lt;n&gt;</code><span>Create a 1:1 covenant: a new output bound to the covenant id that the Kaspa SDK derives (transaction v1).</span>
+<code>hardkas silver covenant genesis &lt;record&gt; --from &lt;account&gt; --amount &lt;kas&gt;</code><span>Create a 1:1 covenant: a new output bound to the covenant id that the Kaspa SDK derives (transaction v1).</span>
 <table class="flags">
 <tr>
 <td><code>&lt;record&gt;</code></td>
@@ -2399,11 +2429,11 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--compute-budget &lt;n&gt;</code></td>
-<td>Compute budget of the funding input; set it explicitly, no estimator exists</td>
+<td>Compute budget of the funding inputs; optional, default the certified P2PK budget</td>
 </tr>
 <tr>
 <td><code>--fee &lt;sompi&gt;</code></td>
-<td>Explicit fee in sompi; required when the compute budget is above 0</td>
+<td>Fee in sompi, at least the node's floor for this transaction; optional, default that floor</td>
 </tr>
 <tr>
 <td><code>--wait</code></td>
@@ -2412,7 +2442,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas silver covenant transition &lt;covenant-record&gt; --policy &lt;name&gt; --constructor-args &lt;file&gt; --state-map &lt;json&gt; --next-state &lt;file&gt; --compute-budget &lt;n&gt;</code><span>Advance a 1:1 auth-bound covenant: silverc compiles the successor state and the covenant id stays the same.</span>
+<code>hardkas silver covenant transition &lt;covenant-record&gt; --policy &lt;name&gt; --constructor-args &lt;file&gt; --state-map &lt;json&gt; --next-state &lt;file&gt;</code><span>Advance a 1:1 auth-bound covenant: silverc compiles the successor state and the covenant id stays the same.</span>
 <table class="flags">
 <tr>
 <td><code>&lt;covenant-record&gt;</code></td>
@@ -2436,11 +2466,11 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--compute-budget &lt;n&gt;</code></td>
-<td>Compute budget of the covenant input; explicit</td>
+<td>Compute budget of the covenant input, or <code>estimate</code> (rusty-kaspa's upper bound); optional, default the certified budget of this entry, else that estimate</td>
 </tr>
 <tr>
 <td><code>--fee &lt;sompi&gt;</code></td>
-<td>Explicit fee; required when the compute budget is above 0</td>
+<td>Fee in sompi, paid from the covenant's value, at least the node's floor; optional, default that floor</td>
 </tr>
 <tr>
 <td><code>--emit-args &lt;file&gt;</code></td>
@@ -2449,7 +2479,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas silver test &lt;record&gt; --tests &lt;file&gt;</code><span>Experimental: run a compiled contract's tests on the official SilverScript runner (script engine on scenario transactions, not transaction validity), or with <code>--on-node</code> each case as the real transaction it describes, judged by a Kaspa node.</span>
+<code>hardkas silver test &lt;record&gt; --tests &lt;file&gt;</code><span>Experimental: run a compiled contract's tests on a locally built SilverScript runner (cli-debugger; UNVERIFIED, since upstream publishes no runner binary; script engine on scenario transactions, not transaction validity), or with <code>--on-node</code> each case as the real transaction it describes, judged by a Kaspa node.</span>
 <table class="flags">
 <tr>
 <td><code>&lt;record&gt;</code></td>
@@ -2526,7 +2556,7 @@ hardkas chaos replay --run-seed 42">
 <table class="flags">
 <tr>
 <td><code>--backend &lt;type&gt;</code></td>
-<td><code>sqlite</code> builds the index; <code>filesystem</code> (the default) indexes nothing</td>
+<td><code>sqlite</code> (the default) builds .hardkas/store.db; <code>filesystem</code> keeps no index and is refused (<code>QUERY_STORE_REBUILD_UNSUPPORTED</code>)</td>
 </tr>
 </table>
 </div>
@@ -2657,11 +2687,11 @@ hardkas chaos replay --run-seed 42">
 </div>
 </details>
 </div>
-<p>Not listed: <code>capabilities</code> (hidden; it prints a fixed list that contradicts the release claims), <code>kaspa wallet create</code> (it prints a private key and saves nothing; use <code>accounts real generate</code>), <code>kaspa wallet send</code> (it cannot reach a node with the default config; use <code>tx plan</code>, <code>tx sign</code> and <code>tx send</code>) and <code>query artifacts inspect</code> (it reports contradictory results).</p>
+<p>Not listed: <code>capabilities</code> (hidden, internal/experimental), <code>kaspa wallet create</code> (it saves nothing; use <code>accounts real generate</code>), <code>kaspa wallet send</code> (it cannot reach a node with the default config; use <code>tx plan</code>, <code>tx sign</code> and <code>tx send</code>) and <code>query artifacts inspect</code> (it reports contradictory results).</p>
 </section>
 <section id="packages">
 <h2>Package map</h2>
-<p>The main packages (the repository has 35):</p>
+<p>The main packages (the repository has 31):</p>
 <table>
 <thead>
 <tr>
@@ -2684,7 +2714,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>@hardkas/core</code></td>
-<td>Shared types, errors, the execution guard and workspace locks.</td>
+<td>Shared types, errors, the execution guard, workspace locks and sessions.</td>
 </tr>
 <tr>
 <td><code>@hardkas/config</code></td>
@@ -2727,16 +2757,12 @@ hardkas chaos replay --run-seed 42">
 <td>Local Hono server, health endpoints and SSE invalidation.</td>
 </tr>
 <tr>
-<td><code>@hardkas/client</code> · <code>@hardkas/react</code></td>
-<td>HTTP client for the local dev server, and React hooks and provider for local dashboards. Workspace only: not published in this release.</td>
-</tr>
-<tr>
 <td><code>@hardkas/wallet-adapter</code></td>
 <td>Wallet adapter boundary and local wallet connection helpers. Workspace only: not published in this release.</td>
 </tr>
 <tr>
-<td><code>@hardkas/sessions</code> · <code>@hardkas/bridge-local</code></td>
-<td>Experimental or unregistered surfaces (sessions, bridge). Moving the bridge code to Labs is planned.</td>
+<td><code>@hardkas/bridge-local</code></td>
+<td>Experimental, unregistered bridge surface. Moving the bridge code to Labs is planned.</td>
 </tr>
 <tr>
 <td><code>@hardkas/l2</code> · <code>@hardkas/ext-l2</code></td>
@@ -2797,6 +2823,7 @@ hardkas chaos replay --run-seed 42">
 <p>
                   No. Kaspa L1 does not execute EVM smart contracts. EVM execution belongs
                   to Igra/Kasplex L2 architecture. HardKAS preserves this distinction.
+                  Coming from Ethereum? Read <a href="/docs/guides/hardhat-for-kaspa/">Hardhat for Kaspa</a>.
                 </p>
 </div>
 </details>
@@ -2952,7 +2979,7 @@ hardkas chaos replay --run-seed 42">
       </div>
     </div>
     <div class="footer-bottom">
-      <div>HardKAS <span class="version-string">0.13.0-rc.3</span> · MIT License · Local developer infrastructure in active alpha (not production custody software).</div>
+      <div>HardKAS <span class="version-string">1.0.0</span> · MIT License · Local developer infrastructure (not production custody software).</div>
       <div class="footer-socials">
         <a aria-label="Discord" href="https://discord.gg/bFCVymNHnu" rel="noreferrer" target="_blank"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg></a>
         <a aria-label="X" href="https://x.com/HardKASOfficial" rel="noreferrer" target="_blank"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>

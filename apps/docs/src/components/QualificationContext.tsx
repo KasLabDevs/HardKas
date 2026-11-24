@@ -4,7 +4,8 @@ import { qualificationData } from '../../docs-data/qualification';
 export default function QualificationContext({ capabilityId }: { capabilityId: string }) {
   const data = qualificationData[capabilityId];
   if (!data) {
-    return <div style={{ color: 'red', border: '1px solid red', padding: '10px' }}>Unknown capability: {capabilityId}</div>;
+    // Fail the build (static rendering) instead of publishing a red "Unknown capability" box.
+    throw new Error(`QualificationContext: unknown capabilityId "${capabilityId}"; add it to docs-data/qualification.ts`);
   }
 
   return (

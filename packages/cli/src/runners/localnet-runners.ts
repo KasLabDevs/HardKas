@@ -6,7 +6,7 @@ import { forkFromNetwork, saveLocalnetState } from "@hardkas/localnet";
 import { resolve } from "node:path";
 import fs from "node:fs/promises";
 import { withLock, sha256hex, getCoinbaseMaturity, CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET, nodeRpcUrl } from "@hardkas/core";
-import { DockerKaspadRunner, verifyNodeIdentity, requireNodeIdentity } from "@hardkas/node-runner";
+import { DockerKaspadRunner, verifyNodeIdentity, requireNodeIdentity, DOCKER_PROBE_TIMEOUT_MS } from "@hardkas/node-runner";
 import { resolveHardkasAccountAddress, listHardkasAccounts } from "@hardkas/accounts";
 import { execa } from "execa";
 import { HardkasSchemas } from "@hardkas/artifacts";
@@ -206,7 +206,8 @@ export async function runLocalnetStop(opts: { json?: boolean; profile?: string; 
 /** A canonical container's state as Docker reports it; "absent" when it does not exist. Docker unreachable throws. */
 async function toccataContainerState(name: string): Promise<{ state: string; up: boolean }> {
   try {
-    const { stdout } = await execa("docker", ["inspect", "--format", "{{.State.Status}}", name]);
+    // DOCKER-PROBE-TIMEOUT-1: a Docker that does not answer is unavailable, never a wait without end
+    const { stdout } = await execa("docker", ["inspect", "--format", "{{.State.Status}}", name], { timeout: DOCKER_PROBE_TIMEOUT_MS });
     const state = stdout.trim();
     return { state, up: state === "running" || state === "paused" || state === "restarting" };
   } catch (e: any) {
@@ -454,7 +455,19 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
         ? "Miner: still mining to this account (--keep-miner)"
         : "Miner: running for block production; its rewards go to an unspendable address"
   );
+  if (opts.keepMiner) UI.warning(KEEP_MINER_UTXO_GROWTH_WARNING);
 }
+
+/**
+ * RPC-RESPONSE-TOO-LARGE-1 (LFU, option E: warn, the meaning of --keep-miner unchanged): each block mined to the account
+ * adds about one coinbase UTXO, and HardKAS reads at most about 277,000 UTXOs of one address (100 MiB per RPC message).
+ * At the default miner throttle (~36 blocks/s, measured 3-oct-2026) that is about 2 hours of mining.
+ */
+export const KEEP_MINER_UTXO_GROWTH_WARNING =
+  "--keep-miner: every block mined to this account adds about one UTXO to it. HardKAS reads at most about 277,000 UTXOs of one " +
+  "address (100 MiB per RPC message), about 2 hours of mining at the default miner throttle; past that, the commands that read " +
+  "this account's UTXO list (tx plan, accounts consolidate, rpc utxos) fail with RPC_RESPONSE_TOO_LARGE. Run `localnet fund` " +
+  "without --keep-miner to move the miner's rewards off this account.";
 
 /**
  * Reward address of the liveness miner `localnet fund` leaves running (FUND-LIVENESS-1): P2SH of the one-byte script
@@ -754,7 +767,7 @@ async function isManagedNodeRunning(): Promise<boolean> {
       "-f",
       "{{.State.Running}}",
       TOCCATA_NODE_CONTAINER
-    ]);
+    ], { timeout: DOCKER_PROBE_TIMEOUT_MS });
     return stdout.trim() === "true";
   } catch {
     return false;
@@ -850,7 +863,7 @@ export async function inspectDockerContainer(name: string) {
       "--format",
       "{{.State.Status}}|{{.Config.Image}}|{{.Name}}",
       name
-    ]);
+    ], { timeout: DOCKER_PROBE_TIMEOUT_MS });
     const [status, image, rawName] = stdout.trim().split("|");
     return {
       exists: true,

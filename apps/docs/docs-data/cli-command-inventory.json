@@ -59,7 +59,7 @@
     "options": [
       {
         "flags": "--json",
-        "description": "No effect: up prints human output only",
+        "description": "Print one JSON document (the dev server: status, url, token) instead of human output",
         "defaultValue": false
       }
     ],
@@ -151,6 +151,11 @@
         "defaultValue": false
       },
       {
+        "flags": "--yes",
+        "description": "Confirm the broadcast. Required unless the network is simulated or simnet: without it the batch (every payment of it) is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written",
+        "defaultValue": false
+      },
+      {
         "flags": "--json",
         "description": "Output as JSON",
         "defaultValue": false
@@ -198,7 +203,7 @@
       },
       {
         "flags": "--fee-rate <sompiPerMass>",
-        "description": "Whole sompi per gram of mass, at least 1 (default: 1 in the simulator, 100 on real networks; not a live estimate)"
+        "description": "Whole sompi per gram of mass, at least 1 (default: 1 in the simulator, live node getFeeEstimate on real networks bounded by maxFeeRate)"
       },
       {
         "flags": "--max-fee <sompi>",
@@ -454,7 +459,7 @@
       },
       {
         "flags": "--yes",
-        "description": "Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3) and nothing is written",
+        "description": "Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is written",
         "defaultValue": false
       },
       {
@@ -1499,165 +1504,6 @@
     ],
     "aliases": [],
     "category": "Accounts",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas node start",
-    "description": "Start local node stable",
-    "arguments": [],
-    "options": [
-      {
-        "flags": "--image <image>",
-        "description": "Docker image, pinned by digest: <repository>[:tag]@sha256:<64 hex> (default: the pinned rusty-kaspad); an image without a digest is refused (NODE_IMAGE_DIGEST_REQUIRED)"
-      },
-      {
-        "flags": "--allow-floating-image",
-        "description": "No effect: the image must be pinned by digest (@sha256:<64 hex>); a floating tag is never run",
-        "defaultValue": false
-      },
-      {
-        "flags": "--wait-lock",
-        "description": "Wait for workspace lock if held",
-        "defaultValue": false
-      },
-      {
-        "flags": "--lock-timeout <ms>",
-        "description": "Lock wait timeout in ms",
-        "defaultValue": "30000"
-      },
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Node",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas node stop",
-    "description": "Stop local node stable",
-    "arguments": [],
-    "options": [
-      {
-        "flags": "--wait-lock",
-        "description": "Wait for workspace lock if held",
-        "defaultValue": false
-      },
-      {
-        "flags": "--lock-timeout <ms>",
-        "description": "Lock wait timeout in ms",
-        "defaultValue": "30000"
-      },
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Node",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas node restart",
-    "description": "Restart local node stable",
-    "arguments": [],
-    "options": [
-      {
-        "flags": "--wait-lock",
-        "description": "Wait for workspace lock if held",
-        "defaultValue": false
-      },
-      {
-        "flags": "--lock-timeout <ms>",
-        "description": "Lock wait timeout in ms",
-        "defaultValue": "30000"
-      },
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Node",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas node reset",
-    "description": "Stop node and remove all local chain data preview",
-    "arguments": [],
-    "options": [
-      {
-        "flags": "--start",
-        "description": "Restart the node after reset",
-        "defaultValue": false
-      },
-      {
-        "flags": "--yes",
-        "description": "Skip confirmation prompt",
-        "defaultValue": false
-      },
-      {
-        "flags": "--wait-lock",
-        "description": "Wait for workspace lock if held",
-        "defaultValue": false
-      },
-      {
-        "flags": "--lock-timeout <ms>",
-        "description": "Lock wait timeout in ms",
-        "defaultValue": "30000"
-      },
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Node",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas node status",
-    "description": "Check node status",
-    "arguments": [],
-    "options": [
-      {
-        "flags": "--json",
-        "description": "Return status in JSON format",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Node",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas node logs",
-    "description": "View node logs preview",
-    "arguments": [],
-    "options": [
-      {
-        "flags": "--tail <n>",
-        "description": "Number of lines to show",
-        "defaultValue": "100"
-      },
-      {
-        "flags": "--follow",
-        "description": "No effect: the logs are printed once (the last --tail lines), never followed",
-        "defaultValue": false
-      },
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Node",
     "status": "REGISTERED"
   },
   {
@@ -2706,6 +2552,36 @@
     "status": "REGISTERED"
   },
   {
+    "commandPath": "hardkas localnet reset",
+    "description": "Start the localnet over from an empty chain: stop the Docker toccata-v2 node and its miner and remove this workspace's chain data (.hardkas/kaspad); a running node whose chain is another workspace's is refused; dev accounts, keys and records are kept; needs Docker alpha",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--yes",
+        "description": "Confirm the removal of this workspace's chain data (required with --json)",
+        "defaultValue": false
+      },
+      {
+        "flags": "--wait-lock",
+        "description": "Wait for workspace lock if held",
+        "defaultValue": false
+      },
+      {
+        "flags": "--lock-timeout <ms>",
+        "description": "Lock wait timeout in ms",
+        "defaultValue": "30000"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Localnet",
+    "status": "REGISTERED"
+  },
+  {
     "commandPath": "hardkas localnet status",
     "description": "Show localnet status alpha",
     "arguments": [],
@@ -3342,6 +3218,25 @@
     "status": "REGISTERED"
   },
   {
+    "commandPath": "hardkas dev recover-lock",
+    "description": "Archive a STALE dev-server send-guard lock (its process no longer runs; kept as evidence as send-guard.v1.lock.stale-<pid>-<time>) so one dev server can send again. Stop every dev server on the workspace first. Refused when the lock is missing or unreadable, names another pid, or its process is alive; the send-guard log is untouched",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--pid <pid>",
+        "description": "The process id the lock names (the SEND_GUARD_LOCK_STALE refusal says it)"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Dev",
+    "status": "REGISTERED"
+  },
+  {
     "commandPath": "hardkas dev last",
     "description": "Act on the latest transaction artifact of the workspace store",
     "arguments": [],
@@ -3510,280 +3405,6 @@
     ],
     "aliases": [],
     "category": "Kaspa",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas pskt capabilities",
-    "description": "Show PSKT adapter capabilities alpha",
-    "arguments": [],
-    "options": [
-      {
-        "flags": "--adapter <adapterId>",
-        "description": "Specific adapter ID to query (default: kaspa-wasm-local)"
-      },
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Pskt",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas pskt inspect",
-    "description": "Show a PSKT session file's metadata. It does not decode the payload: no inputs, outputs, amounts or recipients, so it is no pre-signing check alpha",
-    "arguments": [
-      {
-        "name": "sessionPath",
-        "required": true,
-        "description": ""
-      }
-    ],
-    "options": [
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Pskt",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas pskt verify",
-    "description": "Verify integrity and lineage of a PSKT session alpha",
-    "arguments": [
-      {
-        "name": "sessionPath",
-        "required": true,
-        "description": ""
-      }
-    ],
-    "options": [
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Pskt",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas pskt export",
-    "description": "Export a TxPlan as a Portable Signing Session unavailable",
-    "arguments": [],
-    "options": [
-      {
-        "flags": "--plan <planPath>",
-        "description": "Path to the TxPlan JSON artifact"
-      },
-      {
-        "flags": "--out <sessionPath>",
-        "description": "Path to write the new PSKT session JSON"
-      },
-      {
-        "flags": "--adapter <adapterId>",
-        "description": "Specific adapter ID to bind to (default: kaspa-wasm-local)"
-      },
-      {
-        "flags": "--force",
-        "description": "Overwrite the output file if it exists",
-        "defaultValue": false
-      },
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Pskt",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas pskt import",
-    "description": "Import a raw payload into a PSKT session unavailable",
-    "arguments": [],
-    "options": [
-      {
-        "flags": "--file <sessionPath>",
-        "description": "Path to the PSKT session JSON"
-      },
-      {
-        "flags": "--payload <payloadPath>",
-        "description": "Path to the raw payload file"
-      },
-      {
-        "flags": "--out <outputPath>",
-        "description": "Path to write the updated PSKT session JSON"
-      },
-      {
-        "flags": "--force",
-        "description": "Overwrite the output file if it exists",
-        "defaultValue": false
-      },
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Pskt",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas pskt sign",
-    "description": "Sign a PSKT session payload unavailable",
-    "arguments": [
-      {
-        "name": "sessionPath",
-        "required": true,
-        "description": ""
-      }
-    ],
-    "options": [
-      {
-        "flags": "--account <name>",
-        "description": "Name of the HardKAS L1 account to sign with"
-      },
-      {
-        "flags": "--keystore <path>",
-        "description": "Path to a HardKAS keystore JSON file"
-      },
-      {
-        "flags": "--key-stdin",
-        "description": "Read private key from standard input"
-      },
-      {
-        "flags": "--private-key-file <path>",
-        "description": "Path to file containing raw private key (TEST ONLY)"
-      },
-      {
-        "flags": "--inputs <indexes>",
-        "description": "Comma-separated input indexes to sign (default: the inputs this participant is eligible for)"
-      },
-      {
-        "flags": "--network <name>",
-        "description": "The network you sign for (default: the workspace's); it must be the session's, and its node must list every input to sign as unspent"
-      },
-      {
-        "flags": "--out <outputPath>",
-        "description": "Path to write the updated PSKT session JSON"
-      },
-      {
-        "flags": "--force",
-        "description": "Overwrite the output file if it exists",
-        "defaultValue": false
-      },
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Pskt",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas pskt merge",
-    "description": "Merge two PSKT sessions unavailable",
-    "arguments": [
-      {
-        "name": "sessionA",
-        "required": true,
-        "description": ""
-      },
-      {
-        "name": "sessionB",
-        "required": true,
-        "description": ""
-      }
-    ],
-    "options": [
-      {
-        "flags": "--out <outputPath>",
-        "description": "Path to write the merged PSKT session JSON"
-      },
-      {
-        "flags": "--force",
-        "description": "Overwrite the output file if it exists",
-        "defaultValue": false
-      },
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Pskt",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas pskt finalize",
-    "description": "Finalize a PSKT session unavailable",
-    "arguments": [
-      {
-        "name": "sessionPath",
-        "required": true,
-        "description": ""
-      }
-    ],
-    "options": [
-      {
-        "flags": "--out <outputPath>",
-        "description": "Path to write the finalized PSKT session JSON"
-      },
-      {
-        "flags": "--force",
-        "description": "Overwrite the output file if it exists",
-        "defaultValue": false
-      },
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Pskt",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas pskt extract",
-    "description": "Extract KaspaRpcTransaction from a finalized PSKT session unavailable",
-    "arguments": [
-      {
-        "name": "sessionPath",
-        "required": true,
-        "description": ""
-      }
-    ],
-    "options": [
-      {
-        "flags": "--out <outputPath>",
-        "description": "Path to write the Kaspa transaction JSON"
-      },
-      {
-        "flags": "--force",
-        "description": "Overwrite the output file if it exists",
-        "defaultValue": false
-      },
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Pskt",
     "status": "REGISTERED"
   },
   {
@@ -4242,120 +3863,6 @@
     "status": "REGISTERED"
   },
   {
-    "commandPath": "hardkas silver debug",
-    "description": "Execute a covenant transition on the SilverScript runner (cli-debugger: a local build, no official binary exists) after the structural v1 validation, and emit source-mapped step traces, variable state and three verdicts (structural, SCRIPT_VM, global). Exit codes: 0 APPROVED (or any rejection with --allow-failure); 1 rejected (SILVER_DEBUG_STRUCTURAL_REJECTED, SILVER_DEBUG_CONTRACT_REJECTED) or a runner that gave no verdict (SILVER_RUNNER_NOT_FOUND, _START_FAILED, _TIMEOUT, _PROTOCOL_ERROR or _INTERNAL_ERROR); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record",
-    "arguments": [
-      {
-        "name": "source-or-record",
-        "required": true,
-        "description": ""
-      }
-    ],
-    "options": [
-      {
-        "flags": "--entry <name>",
-        "description": "Covenant policy or entrypoint name (e.g. bump)"
-      },
-      {
-        "flags": "--constructor-args <file>",
-        "description": "Constructor arguments JSON file"
-      },
-      {
-        "flags": "--args <json-or-file>",
-        "description": "Entry arguments JSON array or file path"
-      },
-      {
-        "flags": "--state <json-or-file>",
-        "description": "Current covenant state JSON object or file path"
-      },
-      {
-        "flags": "--next-state <json-or-file>",
-        "description": "Successor covenant state JSON object or file path"
-      },
-      {
-        "flags": "--demo-fixture",
-        "description": "Allow generated laboratory fixture parameters and synthetic UTXO when explicit transaction arguments are omitted",
-        "defaultValue": false
-      },
-      {
-        "flags": "--fee <sompi>",
-        "description": "Fee in sompi (default: 300000)"
-      },
-      {
-        "flags": "--compute-budget <n>",
-        "description": "Compute budget or 'estimate' (default: estimate)"
-      },
-      {
-        "flags": "--allow-failure",
-        "description": "Return exit code 0 when the transition is rejected (structural validation or SCRIPT_VM), for interactive inspection; the verdicts are unchanged",
-        "defaultValue": false
-      },
-      {
-        "flags": "--allow-unverified-runner",
-        "description": "Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official",
-        "defaultValue": false
-      },
-      {
-        "flags": "--json",
-        "description": "Output as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Silver",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas silver fuzz",
-    "description": "Run bidirectional property-based fuzzing over a counter covenant transition: SCRIPT_VM checks the counter rule (accepted iff delta > 0 and next = previous + delta) on the SilverScript runner; SYNTHETIC checks the structural compute-budget bounds. Exit codes: 0 FUZZ PASS; 1 counterexample (SILVER_FUZZ_FAILED), too few samples of one direction (SILVER_FUZZ_INSUFFICIENT_COVERAGE), a sample without a VM verdict (SILVER_FUZZ_NO_VM_EVIDENCE), a testbed error (SILVER_FUZZ_EVALUATION_ERROR), a runner that gave no verdict (SILVER_RUNNER_NOT_FOUND, _START_FAILED, _TIMEOUT, _PROTOCOL_ERROR or _INTERNAL_ERROR) or one that changed during the run (SILVER_RUNNER_CHANGED); 2 usage (SILVER_OPTION_INVALID, SILVER_FUZZ_SHAPE_UNSUPPORTED); 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record",
-    "arguments": [
-      {
-        "name": "source-or-record",
-        "required": true,
-        "description": ""
-      }
-    ],
-    "options": [
-      {
-        "flags": "--entry <name>",
-        "description": "Covenant entrypoint name: it must take (State, int delta, sig) over a state of one int field",
-        "defaultValue": "bump"
-      },
-      {
-        "flags": "--constructor-args <file>",
-        "description": "Constructor arguments JSON file"
-      },
-      {
-        "flags": "--runs <n>",
-        "description": "Generated samples (1-10000), run after the boundary samples that every run includes",
-        "defaultValue": "10"
-      },
-      {
-        "flags": "--seed <n>",
-        "description": "Deterministic RNG seed (32-bit integer)",
-        "defaultValue": "20261029"
-      },
-      {
-        "flags": "--backend <backend>",
-        "description": "SCRIPT_VM: the counter rule on the SilverScript runner; SYNTHETIC: the structural compute-budget bounds (no contract logic is judged without the VM)",
-        "defaultValue": "SCRIPT_VM"
-      },
-      {
-        "flags": "--allow-unverified-runner",
-        "description": "Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official",
-        "defaultValue": false
-      },
-      {
-        "flags": "--json",
-        "description": "Output as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Silver",
-    "status": "REGISTERED"
-  },
-  {
     "commandPath": "hardkas silver doctor",
     "description": "Report whether the pinned toolchains and the node the Silver on-chain commands would use are ready",
     "arguments": [],
@@ -4504,11 +4011,15 @@
       },
       {
         "flags": "--from <account>",
-        "description": "With --on-node: the account that funds one coin per reproducible case at the contract's P2SH (local key)"
+        "description": "With --on-node: the account that funds one coin per reproducible case at the contract's P2SH, all in ONE funding transaction (one output per case; local key)"
       },
       {
         "flags": "--timeout <seconds>",
         "description": "With --on-node: seconds to wait for each funding coin, each relative lock and each accepted spend to show in the node's UTXO index (default 120)"
+      },
+      {
+        "flags": "--yes",
+        "description": "With --on-node: confirm the broadcasts (the funding and each case's spend). Required unless the network is simnet: without it the run is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written"
       },
       {
         "flags": "--out <file>",
@@ -4586,6 +4097,11 @@
       {
         "flags": "--password-stdin",
         "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+        "defaultValue": false
+      },
+      {
+        "flags": "--yes",
+        "description": "Confirm the broadcast. Required unless the network is simulated or simnet: without it the deploy is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written",
         "defaultValue": false
       },
       {
@@ -4678,6 +4194,11 @@
         "defaultValue": false
       },
       {
+        "flags": "--yes",
+        "description": "Confirm the broadcast. Required unless the network is simulated or simnet: without it the spend is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written",
+        "defaultValue": false
+      },
+      {
         "flags": "--json",
         "description": "Output as JSON",
         "defaultValue": false
@@ -4747,6 +4268,11 @@
       {
         "flags": "--password-stdin",
         "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+        "defaultValue": false
+      },
+      {
+        "flags": "--yes",
+        "description": "Confirm the broadcast. Required unless the network is simulated or simnet: without it the genesis is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written",
         "defaultValue": false
       },
       {
@@ -4835,6 +4361,11 @@
       {
         "flags": "--password-stdin",
         "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+        "defaultValue": false
+      },
+      {
+        "flags": "--yes",
+        "description": "Confirm the broadcast. Required unless the network is simulated or simnet: without it the transition is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written",
         "defaultValue": false
       },
       {
@@ -4941,6 +4472,11 @@
       {
         "flags": "--password-stdin",
         "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+        "defaultValue": false
+      },
+      {
+        "flags": "--yes",
+        "description": "Confirm the broadcast. Required unless the network is simulated or simnet: without it the covenant's creation is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written",
         "defaultValue": false
       },
       {
@@ -5058,6 +4594,11 @@
       {
         "flags": "--password-stdin",
         "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+        "defaultValue": false
+      },
+      {
+        "flags": "--yes",
+        "description": "Confirm the broadcast. Required unless the network is simulated or simnet: without it the transition is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written",
         "defaultValue": false
       },
       {
@@ -5468,6 +5009,11 @@
         "defaultValue": false
       },
       {
+        "flags": "--yes",
+        "description": "Confirm the broadcast. Required unless the network is simulated or simnet: without it the deploy is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written",
+        "defaultValue": false
+      },
+      {
         "flags": "--json",
         "description": "Output as JSON",
         "defaultValue": false
@@ -5502,7 +5048,7 @@
       },
       {
         "flags": "--funder <account>",
-        "description": "Pay the fee from this account's coins (local key); default: the tokens' KAS (the first new output keeps what the fee leaves)"
+        "description": "Pay the fee from this account's coins (local key). Default: the sender's side pays, never a recipient's output: --from's token change output keeps what the fee leaves; without token change, --from's own KAS coins pay it; when neither can, the transfer is refused before anything is signed (KCC20_FEE_SOURCE_REQUIRED: name a funder)"
       },
       {
         "flags": "--artifact <file>",
@@ -5545,6 +5091,11 @@
       {
         "flags": "--password-stdin",
         "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+        "defaultValue": false
+      },
+      {
+        "flags": "--yes",
+        "description": "Confirm the broadcast. Required unless the network is simulated or simnet: without it the transfer is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written",
         "defaultValue": false
       },
       {
@@ -5734,6 +5285,11 @@
         "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the draft's network; simnet: the canonical localnet)"
       },
       {
+        "flags": "--yes",
+        "description": "Confirm the broadcast. Required unless the network is simulated or simnet: without it the rescue is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written",
+        "defaultValue": false
+      },
+      {
         "flags": "--json",
         "description": "Output as JSON",
         "defaultValue": false
@@ -5842,6 +5398,11 @@
       {
         "flags": "--password-stdin",
         "description": "Read the keystore password of the encrypted account this command signs with from stdin",
+        "defaultValue": false
+      },
+      {
+        "flags": "--yes",
+        "description": "Confirm the broadcast. Required unless the network is simulated or simnet: without it the funding is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written",
         "defaultValue": false
       },
       {
@@ -5994,6 +5555,11 @@
         "flags": "--timeout <seconds>",
         "description": "With --wait: how long to wait",
         "defaultValue": "120"
+      },
+      {
+        "flags": "--yes",
+        "description": "Confirm the broadcast. Required unless the network is simulated or simnet: without it the release is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written",
+        "defaultValue": false
       },
       {
         "flags": "--json",
@@ -6289,16 +5855,20 @@
   },
   {
     "commandPath": "hardkas zk toccata verify-scripts",
-    "description": "Verify Toccata P2SH scripts: the pinned RISC Zero verifying key, control root and control id, and a redeem script byte-identical to the one HardKAS builds for the parameters it carries; consensusEnforced only for such an output-bound lock (payout, change, one input, input limit), never from the presence of opcodes",
+    "description": "Verify Toccata P2SH scripts: the pinned RISC Zero verifying key, control root and control id, and a redeem script byte-identical to the one HardKAS builds for the parameters it carries; consensusEnforced only for such an output-bound lock (payout, change, one input, input limit), never from the presence of opcodes. The scripts come from a lock's record (--scripts, as 'spend' takes it) or as hex (--redeem-script and --sig-script)",
     "arguments": [],
     "options": [
       {
+        "flags": "--scripts <file>",
+        "description": "The lock's record: the JSON 'zk toccata build-scripts --json' printed (as 'spend --scripts' takes it). Its scripts are verified against what the record claims (image id, journal hash, binding mode, bound outputs) and any --image-id / --journal-hash / --expected-* given; its P2SH script and addresses must be its redeem script's. Not with --redeem-script / --sig-script"
+      },
+      {
         "flags": "--redeem-script <hex>",
-        "description": "Redeem script hex"
+        "description": "Redeem script hex (with --sig-script; not with --scripts)"
       },
       {
         "flags": "--sig-script <hex>",
-        "description": "Signature script hex"
+        "description": "Signature script hex (with --redeem-script; not with --scripts)"
       },
       {
         "flags": "--image-id <hex>",
@@ -7104,7 +6674,7 @@
   },
   {
     "commandPath": "hardkas wallet hd balance",
-    "description": "Scan the wallet's receive and change addresses on the node (gap limit) and show what they hold. Mainnet is refused: MAINNET_CONNECTION_DISABLED experimental",
+    "description": "Scan the wallet's receive and change addresses on the node (gap limit) and show what they hold: every address the wallet's index handed out (zero where emptied) and any funded one past it. Mainnet is refused: MAINNET_CONNECTION_DISABLED experimental",
     "arguments": [
       {
         "name": "wallet",
@@ -7150,7 +6720,7 @@
   },
   {
     "commandPath": "hardkas wallet hd send",
-    "description": "Pay from the wallet: one plan over the UTXOs of all its addresses (the payment planner), change to its next unused change address, each input signed with its own address's key, sent through the same send path as 'tx send' (synced node, one submission per txId, records). Mainnet is refused: MAINNET_BROADCAST_DISABLED, before the password is read experimental",
+    "description": "Pay from the wallet: one plan over the UTXOs of all its addresses (the payment planner), change to its next unused change address, each input signed with its own address's key, sent through the same send path as 'tx send' (synced node, one submission per txId, records). Mainnet is refused: MAINNET_BROADCAST_DISABLED, before the password is read; off simnet it needs --yes, as 'tx send' experimental",
     "arguments": [
       {
         "name": "wallet",
@@ -7190,6 +6760,11 @@
       {
         "flags": "--preflight",
         "description": "Check every input and signature against the node right before the broadcast (as 'tx send --preflight')",
+        "defaultValue": false
+      },
+      {
+        "flags": "--yes",
+        "description": "Confirm the broadcast. Required unless the network is simulated or simnet: without it the payment is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written",
         "defaultValue": false
       },
       {

@@ -5,6 +5,7 @@ import { submitOutcomeOf } from "@hardkas/artifacts";
 import { sendGuardFor, idempotencyKeyOf, NOT_SENT_CODES } from "./send-guard.js";
 // TX-06 / P38 (+ P35): the server's one decision on signing for a client, shared with the escrow routes (dev-autosign.ts)
 import { autoSignRefusal, isMainnetDevServerNetwork, serverAllowsDevAutoSign } from "./dev-autosign.js";
+import { AMOUNT_SOMPI_RULE, exactSompiOf } from "./sompi.js";
 
 export { autoSignRefusal, isMainnetDevServerNetwork, serverAllowsDevAutoSign };
 
@@ -61,10 +62,17 @@ dappTxRoutes.post("/plan", async (c) => {
       });
     }
 
+    // BETA-FIX: the field is in sompi and goes as a bigint — tx.plan reads a string (and a number) as KAS (L1-11), so
+    // passing it through planned 10^8 times the amount; and a JSON number past 2^53 - 1 is refused, never rounded
+    const amount = exactSompiOf(body.amountSompi);
+    if (amount === undefined) {
+      return envelope(c, false, null, { code: "BAD_REQUEST", message: AMOUNT_SOMPI_RULE });
+    }
+
     const plan = await sdk.tx.plan({
       from: body.from,
       to: body.to,
-      amount: body.amountSompi,
+      amount,
       ...(body.feeRate ? { feeRate: BigInt(body.feeRate) } : {})
     });
 
@@ -192,17 +200,19 @@ dappTxRoutes.post("/send", async (c) => {
         guard.abandon(pending);
         return envelope(c, false, null, autoSignRefusal(network));
       }
-      // the amount field is in sompi, and tx.plan reads a string as KAS (L1-11): it goes as a bigint
-      if (!/^\d+$/.test(String(body.amountSompi))) {
+      // the amount field is in sompi, and tx.plan reads a string as KAS (L1-11): it goes as a bigint, read exactly (a JSON
+      // number past 2^53 - 1 is refused, never rounded)
+      const amount = exactSompiOf(body.amountSompi);
+      if (amount === undefined) {
         guard.abandon(pending);
-        return envelope(c, false, null, { code: "BAD_REQUEST", message: "amountSompi must be a whole number of sompi" });
+        return envelope(c, false, null, { code: "BAD_REQUEST", message: AMOUNT_SOMPI_RULE });
       }
 
       // 1. Plan
       planArtifact = await sdk.tx.plan({
         from: body.from,
         to: body.to,
-        amount: BigInt(String(body.amountSompi)),
+        amount,
         ...(body.feeRate ? { feeRate: BigInt(body.feeRate) } : {})
       });
       artifacts.push(planArtifact);

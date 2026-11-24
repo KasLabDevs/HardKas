@@ -9,7 +9,7 @@ export async function runSessionCreate(
 ) {
   try {
     const config = await loadHardkasConfig();
-    const { createSession } = await import("@hardkas/sessions");
+    const { createSession } = await import("@hardkas/core");
     const { resolveHardkasAccountAddress } = await import("@hardkas/accounts");
 
     // Validate accounts exist
@@ -35,7 +35,7 @@ export async function runSessionCreate(
 
 export async function runSessionList() {
   try {
-    const { loadSessionStoreWithDiagnostics } = await import("@hardkas/sessions");
+    const { loadSessionStoreWithDiagnostics } = await import("@hardkas/core");
     const { store, diagnostics } = loadSessionStoreWithDiagnostics();
 
     if (diagnostics.length > 0) {
@@ -70,7 +70,7 @@ export async function runSessionList() {
 export async function runSessionStatus() {
   try {
     const config = await loadHardkasConfig();
-    const { loadSessionStoreWithDiagnostics } = await import("@hardkas/sessions");
+    const { loadSessionStoreWithDiagnostics } = await import("@hardkas/core");
     const { listHardkasAccounts } = await import("@hardkas/accounts");
 
     const { store, diagnostics } = loadSessionStoreWithDiagnostics();
@@ -126,7 +126,7 @@ export async function runSessionStatus() {
 
 export async function runSessionUse(name: string) {
   try {
-    const { setActiveSession } = await import("@hardkas/sessions");
+    const { setActiveSession } = await import("@hardkas/core");
     await setActiveSession(name);
 
     console.log(`\n${pc.green("✓")} Active session set to "${pc.white(name)}".\n`);

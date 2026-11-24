@@ -129,6 +129,19 @@ export function registerDevCommands(program: Command) {
       await runDevFixtureGenerate(options);
     });
 
+  // BETA-FIX W1: the controlled recovery the dev server's SEND_GUARD_LOCK_STALE refusal names
+  devCmd
+    .command("recover-lock")
+    .description(
+      "Archive a STALE dev-server send-guard lock (its process no longer runs; kept as evidence as send-guard.v1.lock.stale-<pid>-<time>) so one dev server can send again. Stop every dev server on the workspace first. Refused when the lock is missing or unreadable, names another pid, or its process is alive; the send-guard log is untouched"
+    )
+    .requiredOption("--pid <pid>", "The process id the lock names (the SEND_GUARD_LOCK_STALE refusal says it)")
+    .option("--json", "Output as JSON", false)
+    .action(async (options: any) => {
+      const { runDevRecoverLock } = await import("../runners/dev-recover-lock-runner.js");
+      await runDevRecoverLock(options);
+    });
+
   devCmd
     .command("last")
     .description("Act on the latest transaction artifact of the workspace store")

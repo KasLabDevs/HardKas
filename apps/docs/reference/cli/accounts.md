@@ -1,0 +1,204 @@
+---
+title: "hardkas accounts commands"
+sidebar_label: "hardkas accounts"
+description: "Reference for the hardkas accounts commands (list, real init, real import, real session-open, and 6 more), with their arguments, options and defaults."
+---
+
+# `hardkas accounts`
+
+## `hardkas accounts list`
+
+### Synopsis (Generated)
+
+**Purpose:** List available HardKAS accounts stable
+
+#### Options
+
+- `--config &lt;path&gt;`: Path to config file
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas accounts real init`
+
+### Synopsis (Generated)
+
+**Purpose:** Initialize real dev account store stable
+
+#### Options
+
+- `--force` (Default: `false`): Replace an existing store with an empty one (the old store is copied to a backup first; refused when it holds accounts, unless --discard-accounts)
+- `--discard-accounts` (Default: `false`): With --force: confirm that a store holding accounts is replaced (its backup is still written first)
+- `--wait-lock` (Default: `false`): Wait for workspace lock if held
+- `--lock-timeout &lt;ms&gt;` (Default: `30000`): Lock wait timeout in ms
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas accounts real import`
+
+### Synopsis (Generated)
+
+**Purpose:** Import an account into the persistent store stable
+
+#### Options
+
+- `--name &lt;name&gt;`: Account name: letters, digits, _ and - (default: default)
+- `--address &lt;address&gt;`: Kaspa address
+- `--network &lt;network&gt;`: Network the key is for (default: the address's: kaspasim simnet, kaspadev devnet; a kaspatest address needs testnet-&lt;n&gt; here or in the workspace). A mainnet network or address is refused while mainnet is locked down (MAINNET_SIGNING_DISABLED)
+- `--private-key &lt;hex&gt;`: Deprecated. Unsafe: may leak through shell history. Prefer --private-key-stdin or --private-key-env.
+- `--private-key-stdin` (Default: `false`): Read private key from stdin
+- `--private-key-env &lt;env&gt;`: Read private key from environment variable
+- `--password-stdin` (Default: `false`): Read keystore password from stdin (safe)
+- `--password-env &lt;env&gt;`: Read keystore password from environment variable (safe)
+- `--unsafe-plaintext` (Default: `false`): Store private key in plaintext (legacy/discouraged)
+- `--fixture &lt;name&gt;`: Import deterministic fixture test account
+- `--ecdsa` (Default: `false`): The key is imported as an ECDSA account: --address must be its ECDSA P2PK address (an ECDSA address without this flag is refused: ACCOUNT_KEY_SCHEME_MISMATCH). Default: Schnorr
+- `--yes` (Default: `false`): Skip confirmation for unsafe operations
+- `--wait-lock` (Default: `false`): Wait for workspace lock if held
+- `--lock-timeout &lt;ms&gt;` (Default: `30000`): Lock wait timeout in ms
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas accounts real session-open`
+
+### Synopsis (Generated)
+
+**Purpose:** Check that an account's encrypted keystore opens with its password; nothing is recorded internal
+
+**Aliases:** `unlock`
+
+#### Arguments
+
+- `&lt;name&gt;` (Required): 
+
+#### Options
+
+- `--password-stdin` (Default: `false`): Read password from stdin
+- `--password-env &lt;env&gt;`: Read password from environment variable
+- `--wait-lock` (Default: `false`): Wait for workspace lock if held
+- `--lock-timeout &lt;ms&gt;` (Default: `30000`): Lock wait timeout in ms
+
+---
+
+## `hardkas accounts real session-close`
+
+### Synopsis (Generated)
+
+**Purpose:** Clear the local dev signing session marker internal
+
+**Aliases:** `lock`
+
+#### Arguments
+
+- `&lt;name&gt;` (Required): 
+
+---
+
+## `hardkas accounts real change-password`
+
+### Synopsis (Generated)
+
+**Purpose:** Change password for an encrypted account stable
+
+#### Arguments
+
+- `&lt;name&gt;` (Required): 
+
+#### Options
+
+- `--password-env &lt;env&gt;`: Read the current keystore password from this environment variable
+- `--password-stdin` (Default: `false`): Read the current keystore password from stdin (needs --new-password-env)
+- `--new-password-env &lt;env&gt;`: Read the new keystore password from this environment variable (no confirmation prompt)
+- `--wait-lock` (Default: `false`): Wait for workspace lock if held
+- `--lock-timeout &lt;ms&gt;` (Default: `30000`): Lock wait timeout in ms
+
+---
+
+## `hardkas accounts real generate`
+
+### Synopsis (Generated)
+
+**Purpose:** Generate new real dev account(s) using Kaspa SDK stable
+
+#### Options
+
+- `--name &lt;name&gt;`: Base name for account(s)
+- `--count &lt;number&gt;` (Default: `1`): Number of accounts to generate
+- `--network &lt;network&gt;` (Default: `simnet`): Kaspa network (simnet, testnet-10; mainnet is refused while mainnet is locked down: MAINNET_SIGNING_DISABLED)
+- `--password-stdin` (Default: `false`): Read keystore password from stdin
+- `--password-env &lt;env&gt;`: Read password from environment variable
+- `--unsafe-plaintext` (Default: `false`): Generate accounts in plaintext (legacy/discouraged)
+- `--ecdsa` (Default: `false`): Make ECDSA accounts: the address is the key's ECDSA P2PK address (version 1), recorded with the account and in its keystore's authenticated metadata; HardKAS signs their payments with ECDSA (RFC 6979, low-S). Default: Schnorr
+- `--yes` (Default: `false`): Skip confirmation for unsafe operations
+- `--wait-lock` (Default: `false`): Wait for workspace lock if held
+- `--lock-timeout &lt;ms&gt;` (Default: `30000`): Lock wait timeout in ms
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas accounts balance`
+
+### Synopsis (Generated)
+
+**Purpose:** Show account balance stable
+
+#### Arguments
+
+- `&lt;identifier&gt;` (Required): 
+
+#### Options
+
+- `--network &lt;name&gt;`: Kaspa network name (default: the workspace's default target)
+- `--provider &lt;type&gt;` (Default: `auto`): Provider mode (auto, rpc, simulated)
+- `--url &lt;url&gt;`: RPC URL (optional override)
+- `--local` (Default: `false`): Read the simulator state file (.hardkas/localnet.json) instead of a node
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas accounts fund`
+
+### Synopsis (Generated)
+
+**Purpose:** Fund an account (Faucet) - DEPRECATED
+
+#### Arguments
+
+- `&lt;identifier&gt;` (Required): 
+
+#### Options
+
+- `--amount &lt;kas&gt;` (Default: `1000`): Amount in KAS to fund
+
+---
+
+## `hardkas accounts consolidate`
+
+### Synopsis (Generated)
+
+**Purpose:** Consolidate dust UTXOs into a single UTXO alpha
+
+#### Arguments
+
+- `&lt;account&gt;` (Required): 
+
+#### Options
+
+- `--network &lt;name&gt;`: Kaspa network name
+- `--provider &lt;type&gt;` (Default: `auto`): Provider mode (auto, rpc, simulated)
+- `--url &lt;url&gt;`: RPC URL (optional override)
+- `--target-utxos &lt;n&gt;` (Default: `20`): Target number of UTXOs to leave behind
+- `--batch-size &lt;n&gt;` (Default: `256`): Number of UTXOs to consolidate per batch (max 512)
+- `--min-utxo &lt;sompi&gt;`: Minimum UTXO size to consolidate in sompi
+- `--dry-run`: Only estimate batches (default if --execute is not provided)
+- `--execute`: Execute the consolidation (requires --yes to broadcast)
+- `--yes`: Confirm broadcast for execution
+- `--allow-mainnet`: No effect: mainnet is blocked (MAINNET TOTAL LOCKDOWN) and executing on mainnet stays refused (MAINNET_BROADCAST_DISABLED)
+- `--password-env &lt;env&gt;`: Read the encrypted account's keystore password from this environment variable (read once, before the first batch)
+- `--password-stdin`: Read the encrypted account's keystore password from stdin
+- `--json` (Default: `false`): Output as JSON
+
+---
+

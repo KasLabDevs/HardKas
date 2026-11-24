@@ -1,5 +1,7 @@
 # @hardkas/accounts
 
+Documentation: [hardkas.dev/docs](https://hardkas.dev/docs/) · Website: [hardkas.dev](https://hardkas.dev)
+
 Accounts, keystores and signers: the simulated and dev accounts, the encrypted keystore and the signers that `@hardkas/cli` and `@hardkas/sdk` use.
 
 Part of [HardKAS](https://github.com/KasLabDevs/HardKas), local-first developer tooling for Kaspa L1.
@@ -21,7 +23,7 @@ npm install @hardkas/accounts
 
 ## Status
 
-HardKAS is an alpha: APIs may change between releases. [Versioning](https://github.com/KasLabDevs/HardKas/blob/main/docs/status/versioning.md) says what is stable, preview and experimental. Mainnet is blocked by policy in this release.
+From 1.0 the boundaries listed as stable follow semantic versioning; preview and experimental surfaces may change between minor releases. [Versioning](https://github.com/KasLabDevs/HardKas/blob/main/docs/status/versioning.md) says what is stable, preview and experimental. Mainnet is blocked by policy in this release.
 
 ## License
 

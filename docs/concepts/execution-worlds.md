@@ -1,55 +1,164 @@
+---
+title: Execution Worlds
+description: The three worlds HardKAS runs in (simulator, localnet and RPC), the ExecutionTarget that names them, and how accounts behave in each.
+---
+
 # Execution Worlds
 
-HardKAS 0.13.0-rc.3 introduces the concept of **Execution Worlds** to guarantee deterministic execution and strict isolation between synthetic (simulated) data and real Kaspa networks.
+Every HardKAS operation runs in one execution world, named by an `ExecutionTarget`: a **mode**, a **domain** and a
+**network**. The world decides where UTXOs come from, who validates a transaction and what a send records. HardKAS
+keeps the worlds apart: an artifact or an account made for one world is refused in another (the exact rules are in
+[the execution guard](#the-execution-guard)).
 
-You must never conflate the Simulator with Localnet (Kaspa simnet). They are distinct execution environments with different backends, funding mechanisms, and states.
+Keep one distinction in mind: **the simulator is not simnet.** The simulator is HardKAS's own ledger file, with no
+node. Simnet is a Kaspa network that a real `rusty-kaspad` node runs, on your machine in the localnet mode.
 
-## Execution Modes Matrix
+## The three modes
 
-| Mode      | Backend             | Accounts      | Funding   | UTXOs      | PoW     | Receipts    |
-| --------- | ------------------- | ------------- | --------- | ---------- | ------- | ----------- |
-| Simulator | JS/in-memory        | synthetic     | synthetic | synthetic  | No      | simulated   |
-| Localnet  | rusty-kaspad/Docker | kaspa simnet  | mining    | real local | Yes     | node-backed |
-| RPC       | configured node     | network-valid | external  | real       | network | node-backed |
+| Mode | Backend | Accounts | Funding | UTXOs | Who validates | A send records |
+| :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| `simulator` | the simulated ledger, `.hardkas/localnet.json` (`@hardkas/localnet`) | `synthetic` | `init` gives alice…erin 1000 KAS each | synthetic | nobody: no node, no Kaspa script | a `TxReceipt` with a synthetic `txId` |
+| `localnet` | a `rusty-kaspad` node in Docker, on simnet | `kaspa` (simnet keys) | mining, or the localnet Treasury | real, local | the local node | a `TxSubmission` |
+| `rpc` | a node you configure (testnet-10, behind an opt-in) | `kaspa` or `external-wallet` | external (a faucet) | real | the network | a `TxSubmission` |
 
-## Invariants
-- **Identity Isolation**: A `synthetic` account can only sign transactions for the Simulator. It cannot be used on Localnet.
-- **Cross-World Lineage**: An artifact generated in one execution world (e.g. `mode: "localnet"`) cannot be verified, signed, or replayed in a different world (e.g. `mode: "rpc"`). HardKAS enforces strict runtime guards (`assertExecutionCompatibility`) to prevent this.
-- **No Implicit State**: You must resolve the `ExecutionTarget` before attempting to interact with the blockchain. Never infer execution mode from an account name or network string.
+<!-- qualification: consensusValidation -->
 
-## The Execution Contract
+### Simulator
 
-Every HardKAS artifact that touches the blockchain is bound by an **Execution Contract**. The contract uniquely identifies the context in which the artifact is valid. 
-An artifact cannot cross execution boundaries.
+- **What is real:** HardKAS's planning (the pinned `kaspa-wasm` Generator, the same planner as on a node), the
+  artifacts and their schema validation.
+- **What is simulated:** the UTXO set, time, the network and consensus. The ledger checks amounts and fees; it runs no
+  Kaspa script and is not consensus-equivalent.
+- **Lifecycle:** the ledger applies a send at once. The `TxReceipt` says `confirmed`, and `hardkas tx status` derives
+  `SYNTHETIC_EXECUTED`: no Kaspa consensus was involved.
+- **What it does not prove:** that a node accepts the transaction. A simulator result is never network or consensus
+  evidence.
+- **Replay:** `hardkas replay verify <receipt>` re-runs a simulator receipt and compares the result. It checks
+  determinism, nothing about a network.
 
-```mermaid
-graph TD
-    A[Execution Contract] --> M(mode)
-    A --> D(domain)
-    A --> N(network)
+Use it for test-driven development, CI and fast iteration: it needs no Docker and no node.
 
-    M --> M1[simulator]
-    M --> M2[localnet]
-    M --> M3[rpc]
+### Localnet (a real node on simnet)
 
-    D --> D1[kaspa-l1]
-    D --> D2[kaspa-l2]
+- **What is real:** the Kaspa node (`rusty-kaspad`), its RPC, its mempool and its consensus rules. Addresses start
+  with `kaspasim:`.
+- **What is not:** the network. It is one isolated node with trivial mining difficulty, so it shows nothing about
+  latency, multi-node propagation or reorgs between peers.
+- **Start it:** `hardkas localnet start --toccata` (needs Docker). It creates the dev accounts alice…erin. Fund an
+  account with `hardkas localnet fund <identifier>` (mining to it) or from the localnet Treasury (`--treasury`).
+- **Lifecycle:** `hardkas tx send` returns once the node accepts the submit request (`SUBMITTED`); nothing has been
+  observed on chain yet. `hardkas tx wait <txId>`, or `tx send --wait`, waits until the transaction is `ACCEPTED` or
+  `CONFIRMED` (a blue-score depth set by HardKAS's policy, not finality). In the SDK, `sdk.tx.waitForConfirmations`
+  does the same.
+- **Replay:** refused. `hardkas replay verify` declines a real-node send (`REPLAY_MODE_UNSUPPORTED`): the node's UTXO
+  state has moved on. `hardkas verify` and `hardkas artifact verify <path>` check integrity and lineage, and
+  `hardkas artifact verify <path> --network simnet --require consensus` checks the transaction on the node.
 
-    N --> N1[mainnet]
-    N --> N2[testnet-10]
-    N --> N3[testnet-11]
-    N --> N4[simnet]
-    N --> N5[devnet]
+### RPC (a public testnet)
 
-    classDef contract fill:#0f172a,stroke:#3b82f6,stroke-width:2px,color:#fff;
-    classDef node fill:#1e293b,stroke:#64748b,stroke-width:1px,color:#cbd5e1;
-    
-    class A contract;
-    class M,D,N node;
-    class M1,M2,M3,D1,D2,N1,N2,N3,N4,N5 node;
+- **What is real:** everything: the node, the network, the UTXOs and consensus.
+- **Opt-in:** a public testnet such as testnet-10 needs `experimental: true` and `network.allowPublic: true` in
+  `hardkas.config.ts` (experimental). A broadcast outside the simulator and simnet also needs `--yes`.
+- **Evidence:** a `TxSubmission` per send, with its lineage. The `txId` can be checked on a public explorer.
+- **What it does not prove:** future confirmation. A transaction accepted now can still be un-accepted by a reorg
+  until it is final.
+- **Replay:** refused, as on localnet.
+
+**Mainnet is locked down in this release.** HardKAS makes no connection to a mainnet node (reads included, even to an
+endpoint you declare), signs nothing for it and broadcasts nothing to it (`MAINNET_CONNECTION_DISABLED`,
+`MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`). No flag, option, variable or setting enables it. Mainnet
+records are verified offline only. See the [security model](./security-model.md#mainnet-is-locked-down).
+
+## The ExecutionTarget
+
+The target is three fields (`packages/core/src/index.ts`):
+
+- `mode`: `simulator`, `localnet` or `rpc`;
+- `domain`: `kaspa-l1` or `evm-l2`;
+- `network`: the network id, for example `simulated`, `simnet` or `testnet-10`.
+
+```ts
+import type { HardkasExecutionTarget } from "@hardkas/core";
+
+export const target: HardkasExecutionTarget = { mode: "localnet", domain: "kaspa-l1", network: "simnet" };
 ```
 
-When building applications, you interact with the execution contract primarily when verifying receipts. The transaction lifecycle semantics (`submitted -> accepted -> confirmed`) are intrinsically linked to the execution world:
+Everything in this guide is the `kaspa-l1` domain. The schema reserves `evm-l2`, and a Kaspa account is refused there
+(`EXECUTION_DOMAIN_MISMATCH`). The Igra L2 lab is the experimental `l2` extension, which is not published in this
+release ([not published](../status/versioning.md#not-published)). Kaspa L1 executes no EVM code.
 
-- **Simulator**: Transactions skip `submitted` and immediately emit `confirmed` (in-memory evaluation).
-- **Localnet & RPC**: Transactions are `submitted` to the mempool. Developers must use SDK waiters (e.g., `waitForConfirmations`) to poll the Kaspa DAG for `accepted` and `confirmed` states with quantitative evidence (like DAA scores and accepting block hashes).
+`hardkas init` writes two named targets and makes the simulator the default:
+
+```ts
+// hardkas.config.ts as `hardkas init` writes it (excerpt: it also writes network, artifacts, experimental and networks)
+export default {
+  execution: {
+    default: "simulator",
+    targets: {
+      simulator: { mode: "simulator", domain: "kaspa-l1", network: "simulated" },
+      localnet: { mode: "localnet", domain: "kaspa-l1", network: "simnet" }
+    }
+  }
+};
+```
+
+A command resolves its target once: `--target <name>` (a name from `execution.targets`), else `--network <name>`, else
+`execution.default`. The SDK resolves it the same way when `Hardkas.open()` runs, and every part of the instance
+(its provider, accounts, plans and observers) follows that one target.
+
+## The execution guard
+
+A plan, a signed transaction and a receipt record the target they were made under (their `execution` field). Before
+signing, sending or replaying, HardKAS compares it with the target of the command (`assertExecutionCompatibility` in
+`@hardkas/core`) and refuses a mismatch:
+
+- another domain or another network: always refused (`EXECUTION_DOMAIN_MISMATCH`, `EXECUTION_NETWORK_MISMATCH`);
+- the simulator against a node world, either way: refused (`EXECUTION_MODE_MISMATCH`);
+- localnet against rpc on the same network: a send and an account lookup are allowed; anything else is refused
+  (`EXECUTION_COMPATIBILITY_UNDEFINED`).
+
+An artifact written before artifacts recorded their target has no `execution` field, and the guard lets it through.
+
+Accounts are checked too. A signer must hold authority in the target's world: a `synthetic` account signs only in the
+simulator, and on localnet the signer must be a `kaspa` account of the target's network. A recipient needs no signing
+authority: on a node world, an `external-wallet` address can be funded, while a `synthetic` identity is refused there.
+
+## Accounts in each world
+
+HardKAS keeps four ideas apart:
+
+- **Address:** a bech32-style string with a network prefix (`kaspa:`, `kaspatest:`, `kaspasim:`), for a public key or a
+  script. Knowing an address does not mean holding its key.
+- **Private key:** the secret that signs for an address. It lives in an encrypted keystore in `.hardkas/keystore/`, in
+  plain text when you ask for it, or outside HardKAS entirely (an external wallet).
+- **Account:** a name (`alice`) that HardKAS resolves, in the current world, to an address and, when it can, a way to
+  sign. The same name resolves differently in the simulator and on simnet.
+- **Wallet:** a stateful layer over an address (balances, UTXOs, multi-step payments). See [Accounts](./accounts.md).
+
+An account has one of three kinds:
+
+- `kaspa`: a real key that HardKAS holds (a keystore, or a plaintext key).
+- `synthetic`: a simulator identity. In the simulator, the account layer names alice…erin `kaspa:sim_alice` and so on;
+  the simulated ledger records their UTXOs under each account's `kaspasim:` address and maps one name to the other. The
+  UTXOs are synthetic: no node validates them.
+- `external-wallet`: an address HardKAS can plan for and fund, but whose key it does not hold. That key signs outside
+  HardKAS, or through a [browser wallet](../start/browser-wallets.md) (experimental). This build cannot export a PSKT.
+
+When you run `hardkas tx plan --from alice`, HardKAS resolves the target first, then looks `alice` up in that world: the
+synthetic identity in the simulator, the simnet dev account (a `kaspa` account with a `kaspasim:` address) on
+localnet. It gets an address (to read UTXOs) and, for signing later, the key. Planning needs no key: `--from` also takes
+a bare address.
+
+| | Simulator | Localnet (simnet) | Testnet-10 (opt-in) |
+| :-- | :-- | :-- | :-- |
+| **Account kind** | `synthetic` | `kaspa` | `kaspa` or `external-wallet` |
+| **Address** | `kaspa:sim_<name>`, mapped to a `kaspasim:` ledger address | `kaspasim:` | `kaspatest:` |
+| **Key** | none: a simulator signature is a synthetic authorization bound to the plan | deterministic dev keys (alice…erin, public by design), or accounts you create | an encrypted keystore, or a key held by an external wallet |
+| **Funding** | the simulated ledger | mining (`localnet fund`) or the localnet Treasury | a faucet or other external funds |
+| **Signing** | synthetic | local keystore or plaintext key | local keystore, or a browser wallet (experimental) |
+| **Balances from** | `.hardkas/localnet.json` | the local node | the configured node |
+
+Mainnet is locked down: no keys, no connection, no broadcast.
+
+The [quickstart](../start/quickstart.md) runs the simulator end to end, and [What works](../start/what-works.md)
+lists what each world has been checked against.

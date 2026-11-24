@@ -1,0 +1,243 @@
+---
+title: "hardkas zk commands"
+sidebar_label: "hardkas zk"
+description: "Reference for the hardkas zk commands (capabilities, proof inspect, proof verify, proof verify-math, and 7 more), with their arguments, options and defaults."
+---
+
+# `hardkas zk`
+
+## `hardkas zk capabilities`
+
+### Synopsis (Generated)
+
+**Purpose:** Show experimental ZK lab capabilities
+
+#### Options
+
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas zk proof inspect`
+
+### Synopsis (Generated)
+
+**Purpose:** Inspect a local proof fixture or artifact
+
+#### Arguments
+
+- `&lt;path&gt;` (Required): 
+
+#### Options
+
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas zk proof verify`
+
+### Synopsis (Generated)
+
+**Purpose:** Verify local fixture coherence for a proof artifact (No cryptographic proof or on-chain claims) alpha
+
+**Aliases:** `verify-local`
+
+#### Arguments
+
+- `&lt;path&gt;` (Required): 
+
+#### Options
+
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas zk proof verify-math`
+
+### Synopsis (Generated)
+
+**Purpose:** Groth16 pairing check (snarkjs, BN254; snarkjs is an optional peer of @hardkas/sdk, without it ZK_ENGINE_UNAVAILABLE) of a fixture; VERIFIED only for a pinned verification key (--expect-vk-hash or the in-code registry), otherwise VALID_UNANCHORED_VK; fixture coherence is self-attested (No on-chain claims) alpha
+
+#### Arguments
+
+- `&lt;path&gt;` (Required): 
+
+#### Options
+
+- `--json` (Default: `false`): Output as JSON
+- `--timeout &lt;ms&gt;` (Default: `10000`): Verification timeout in milliseconds (integer, 1..600000)
+- `--expect-vk-hash &lt;sha256&gt;`: Pin the verification key: its fingerprint (summary.verificationKeyFingerprint) or legacy digest, obtained from a source you trust
+- `--math-only` (Default: `false`): Skip the self-attested fixture-coherence check; the result is labelled MATH_ONLY
+- `--allow-weak-vk` (Default: `false`): Accept a verification key with a known trapdoor (toy fixtures only; proofs against such keys prove nothing)
+
+---
+
+## `hardkas zk corpus verify`
+
+### Synopsis (Generated)
+
+**Purpose:** Verify a local ZK corpus (coherence of every listed fixture; pairing check where a fixture claims it, which needs the optional peer snarkjs)
+
+#### Arguments
+
+- `&lt;path&gt;` (Required): 
+
+#### Options
+
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas zk toccata rules`
+
+### Synopsis (Generated)
+
+**Purpose:** Show the Kaspa Toccata L1 Groth16 precompile facts HardKAS relies on (opcode, tag, costs, compute budget)
+
+#### Options
+
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas zk toccata build-scripts`
+
+### Synopsis (Generated)
+
+**Purpose:** Build P2SH redeem and signature scripts for a RISC Zero Groth16 receipt (the receipt's claim is cross-checked against imageId/journalHash). Modes: proof-only (default; the lock binds the image id only: any holder of a valid receipt spends) or proof-and-output-bound (the redeem script also enforces the payout/change outputs by introspection). Simnet address only unless public networks are requested (proof-only also needs the acknowledgement)
+
+#### Options
+
+- `--image-id &lt;hex&gt;`: 32-byte hex Image ID
+- `--journal-hash &lt;hex&gt;`: 32-byte hex Journal Hash
+- `--receipt &lt;pathOrHex&gt;`: Path to receipt file (.hex) or raw receipt hex string
+- `--mode &lt;mode&gt;` (Default: `proof-only`): Binding mode: 'proof-only' (unbound outputs) or 'proof-and-output-bound' (consensus output introspection)
+- `--payout-address &lt;address&gt;`: Consensus-bound recipient address (required if mode is proof-and-output-bound)
+- `--payout-amount &lt;sompi&gt;`: Consensus-bound payout amount in sompi (required if mode is proof-and-output-bound)
+- `--change-address &lt;address&gt;`: Optional consensus-bound change address
+- `--change-amount &lt;sompi&gt;`: Optional consensus-bound change amount in sompi
+- `--max-fee &lt;sompi&gt;`: proof-and-output-bound: the most the lock may pay as fee; a UTXO above the bound outputs plus this stays locked (default 50000000)
+- `--address-network &lt;networks&gt;`: Also return the P2SH address for testnet-10; proof-only needs --ack-image-id-only-lock, and is never built for a public test program (an output-bound lock of one is, with a warning: anyone can trigger its payout). mainnet (any spelling) is refused while mainnet is locked down (MAINNET_SIGNING_DISABLED): nothing is built
+- `--ack-image-id-only-lock` (Default: `false`): Acknowledge that a proof-only lock binds only the image id (anyone with a valid receipt can spend, replay or front-run)
+- `--json` (Default: `false`): Output as JSON
+
+### Semantic Contract (Curated)
+
+- **Environments:** Local (kaspa-wasm ZkScriptBuilder); simnet address always, testnet-10/mainnet only on request
+- **Reads:** RISC Zero Groth16 receipt (file or hex)
+- **Evidence Semantics:** Scripts built and parsed, and the receipt's claim matches (imageId, journalHash). This command signs and broadcasts nothing: `hardkas zk toccata spend` sends a lock's spend through HardKAS's send, the node verifies the proof, and HardKAS claims no on-chain verification of its own.
+
+#### Known Limitations
+- proof-only (default) is IMAGE_ID_ONLY: any holder of a valid receipt of the program spends every UTXO at the address, to any outputs, on any network (replay and front-running by design).
+- proof-and-output-bound is IMAGE_ID_AND_OUTPUTS: output count, payout/change script public key and amount by introspection, exactly one input, and an input of at most the bound outputs plus --max-fee. Fund it with requiredFundingSompi.
+- Neither mode binds the spent outpoint (circular: the funding transaction's id commits to the P2SH; refused as ZK_UTXO_BINDING_UNSATISFIABLE) or the journal (supplied by the unlocking script; the HKZ1 layout is an off-chain convention).
+
+#### Related
+- Concept: /guides/silverscript-covenants/zk-and-sequencing.md
+- Guide: /guides/zk-l1-verification-and-settlement.md
+
+---
+
+## `hardkas zk toccata verify-receipt`
+
+### Synopsis (Generated)
+
+**Purpose:** Verify a RISC Zero Groth16 receipt locally (snarkjs, BN254; without the optional peer snarkjs, ZK_ENGINE_UNAVAILABLE) against the pinned official RISC Zero verifying key, control root and BN254 control id, for the claim of (imageId, journalHash) (No on-chain claims) alpha
+
+#### Options
+
+- `--image-id &lt;hex&gt;`: 32-byte hex Image ID
+- `--journal-hash &lt;hex&gt;`: 32-byte hex Journal Hash
+- `--receipt &lt;pathOrHex&gt;`: Path to receipt file (.hex) or raw receipt hex string
+- `--timeout &lt;ms&gt;` (Default: `10000`): Verification timeout in milliseconds (integer, 1..600000)
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas zk toccata verify-scripts`
+
+### Synopsis (Generated)
+
+**Purpose:** Verify Toccata P2SH scripts: the pinned RISC Zero verifying key, control root and control id, and a redeem script byte-identical to the one HardKAS builds for the parameters it carries; consensusEnforced only for such an output-bound lock (payout, change, one input, input limit), never from the presence of opcodes. The scripts come from a lock's record (--scripts, as 'spend' takes it) or as hex (--redeem-script and --sig-script)
+
+#### Options
+
+- `--scripts &lt;file&gt;`: The lock's record: the JSON 'zk toccata build-scripts --json' printed (as 'spend --scripts' takes it). Its scripts are verified against what the record claims (image id, journal hash, binding mode, bound outputs) and any --image-id / --journal-hash / --expected-* given; its P2SH script and addresses must be its redeem script's. Not with --redeem-script / --sig-script
+- `--redeem-script &lt;hex&gt;`: Redeem script hex (with --sig-script; not with --scripts)
+- `--sig-script &lt;hex&gt;`: Signature script hex (with --redeem-script; not with --scripts)
+- `--image-id &lt;hex&gt;`: Expected 32-byte hex Image ID
+- `--journal-hash &lt;hex&gt;`: Expected 32-byte hex Journal Hash
+- `--expected-mode &lt;mode&gt;`: Expected binding mode ('proof-only' or 'proof-and-output-bound')
+- `--expected-payout-address &lt;address&gt;`: Expected consensus-bound payout address
+- `--expected-payout-amount &lt;sompi&gt;`: Expected consensus-bound payout amount in sompi
+- `--expected-change-address &lt;address&gt;`: Expected consensus-bound change address (output 1)
+- `--expected-change-amount &lt;sompi&gt;`: Expected consensus-bound change amount in sompi
+- `--json` (Default: `false`): Output as JSON
+
+### Semantic Contract (Curated)
+
+- **Environments:** Local (kaspa-wasm ZkScriptBuilder, to rebuild the lock); no node is contacted
+- **Reads:** Redeem and signature scripts (hex), or the scripts record `zk toccata build-scripts --json` printed (--scripts <record>)
+- **Evidence Semantics:** The lock uses the pinned RISC Zero verifying key, control root and control id, and its redeem script is byte-identical to the one build-scripts makes for the parameters it carries. consensusEnforced: true only for such an output-bound lock. The scripts are not executed here; a node runs them only when a spend is sent (`hardkas zk toccata spend`).
+
+#### Known Limitations
+- A lock HardKAS cannot rebuild byte for byte (another builder, other opcodes, another encoding) is ZK_REDEEM_SCRIPT_NOT_CANONICAL: no claim is made about it, even when it may be sound.
+- Expected outputs asked of a lock that binds none (proof-only) are ZK_EXPECTED_BINDING_NOT_ENFORCED, never satisfied vacuously.
+
+#### Related
+- Concept: /guides/silverscript-covenants/zk-and-sequencing.md
+- Guide: /guides/zk-l1-verification-and-settlement.md
+
+---
+
+## `hardkas zk toccata spend`
+
+### Synopsis (Generated)
+
+**Purpose:** Spend a RISC Zero Groth16 lock through HardKAS's send (the SDK's spendR0Groth16Lock): the lock is rebuilt from the receipt and its record (--scripts) or its parameters and checked as verify-scripts checks it; the plan, the signed transaction, the ZK fact and the submission are recorded in the workspace (one submission per txId); the node must prove its network and say it is synced. mainnet is refused; testnet-10 needs experimental + network.allowPublic
+
+#### Options
+
+- `--receipt &lt;pathOrHex&gt;`: Path to receipt file (.hex) or raw receipt hex string (the lock's proof)
+- `--utxo &lt;txid:index&gt;`: The lock's UTXO to spend (its amount is read from the node)
+- `--scripts &lt;file&gt;`: The lock's record: the JSON 'zk toccata build-scripts --json' printed (its parameters are used; its scripts must be the ones the receipt rebuilds)
+- `--image-id &lt;hex&gt;`: Without --scripts: the lock's 32-byte hex Image ID
+- `--journal-hash &lt;hex&gt;`: Without --scripts: the lock's 32-byte hex Journal Hash
+- `--mode &lt;mode&gt;`: Without --scripts: the lock's binding mode, 'proof-only' (default) or 'proof-and-output-bound'
+- `--payout-address &lt;address&gt;`: Without --scripts, proof-and-output-bound: the lock's bound payout address
+- `--payout-amount &lt;sompi&gt;`: Without --scripts, proof-and-output-bound: the lock's bound payout amount in sompi
+- `--change-address &lt;address&gt;`: Without --scripts, proof-and-output-bound: the lock's bound change address
+- `--change-amount &lt;sompi&gt;`: Without --scripts, proof-and-output-bound: the lock's bound change amount in sompi
+- `--max-fee &lt;sompi&gt;`: Without --scripts, proof-and-output-bound: the lock's fee cap (default 50000000)
+- `--to &lt;address&gt;`: proof-only: where the UTXO minus the fee goes (required); proof-and-output-bound: the bound payout (default; another address is refused)
+- `--fee &lt;sompi&gt;`: proof-only: the fee in sompi (default: the recommended fee for the measured spend); proof-and-output-bound: implied by the lock (a different one is refused)
+- `--compute-budget &lt;n&gt;`: The input's compute budget (default 1600; at least what the verifier needs)
+- `--ack-image-id-only-lock` (Default: `false`): testnet-10, proof-only: acknowledge that the lock binds only the image id (whoever sees the proof in the mempool can redirect the spend)
+- `--network &lt;name&gt;`: Network: simnet or testnet-10 (default: the workspace's, else simnet). mainnet is refused; testnet-10 needs experimental + network.allowPublic in the config
+- `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet)
+- `--yes` (Default: `false`): Confirm the broadcast. Required unless the network is simnet: without it the spend is refused (NOT EXECUTED, exit 3) and nothing is written
+- `--wait` (Default: `false`): After the send, wait until the node accepts the spend (observed, as 'tx wait --until accepted')
+- `--timeout &lt;seconds&gt;` (Default: `120`): With --wait: how long to wait (integer seconds, 1..3600)
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas zk toccata observe`
+
+### Synopsis (Generated)
+
+**Purpose:** One look at a ZK spend through the node (as 'tx status' looks: the observation is recorded) and its ZK operation status, from the ZK fact 'zk toccata spend' recorded (or --fact). mainnet is refused
+
+#### Arguments
+
+- `&lt;txId&gt;` (Required): 
+
+#### Options
+
+- `--fact &lt;file&gt;`: The ZK fact (hardkas.zkVerificationFact.v1) of the spend, when the workspace does not hold it
+- `--network &lt;name&gt;`: Network: simnet or testnet-10 (default: the workspace's, else simnet). mainnet is refused; testnet-10 needs experimental + network.allowPublic in the config
+- `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet)
+- `--json` (Default: `false`): Output as JSON
+
+---
+

@@ -194,7 +194,7 @@ describe("hardkas l2 dev · the real local Anvil", () => {
   // for it by hand. Neither the record's claims nor the matching identity make it "ours".
   it("F-03 · a forged record for an anvil HardKAS did not start (0.0.0.0): never used, never stopped", { timeout: 300_000 }, async () => {
     const { spawn } = await import("node:child_process");
-    const { readProcessIdentity } = await import("@hardkas/node-orchestrator");
+    const { readProcessIdentity } = await import("@hardkas/node-runner");
     const { anvilStateDir, ANVIL_PROCESS_ID } = await import("../src/node/anvil.js");
     const { getToolchainInstallDir } = await import("@hardkas/core");
     const bin = path.join(getToolchainInstallDir(foundry, home), foundry.entry);
@@ -235,7 +235,7 @@ describe("hardkas l2 dev · the real local Anvil", () => {
   // R2 (R1-OBS-1): the verified anvil with HardKAS's arguments PLUS an extra flag, started by the manager (so its record
   // is its real argv): `l2 dev` refuses it before any write, and `l2 node stop` (same rule) stops nothing
   it("R1-OBS-1 · the verified anvil with an extra flag (--no-mining): l2 dev refuses before writing; l2 node stop stops nothing", { timeout: 300_000 }, async () => {
-    const { startManagedProcess, stopManagedProcess } = await import("@hardkas/node-orchestrator");
+    const { startManagedProcess, stopManagedProcess } = await import("@hardkas/node-runner");
     const { anvilStateDir, ANVIL_PROCESS_ID, anvilArgs } = await import("../src/node/anvil.js");
     const { getToolchainInstallDir } = await import("@hardkas/core");
     const bin = path.join(getToolchainInstallDir(foundry, home), foundry.entry);
@@ -325,7 +325,7 @@ ${cmd.map((s, i) => `        c[${i}] = ${JSON.stringify(s)};`).join("\n")}
   // L2_NODE_NOT_VERIFIED; L2_WRONG_CHAIN (a node whose command line says 31337 but answers another chain id) is covered
   // by dev-local.test.ts.
   it("the verified anvil, started by HardKAS's manager but with another chain id: refused from its real command line, nothing sent", { timeout: 300_000 }, async () => {
-    const { startManagedProcess, stopManagedProcess } = await import("@hardkas/node-orchestrator");
+    const { startManagedProcess, stopManagedProcess } = await import("@hardkas/node-runner");
     const { anvilStateDir, ANVIL_PROCESS_ID } = await import("../src/node/anvil.js");
     const { getToolchainInstallDir } = await import("@hardkas/core");
     const bin = path.join(getToolchainInstallDir(foundry, home), foundry.entry);

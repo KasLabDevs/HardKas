@@ -15,7 +15,8 @@
  * opened. A plan or a send opens the wallet with its password first, so the change address and the keys come from the
  * authenticated wallet, never from an unverified file header.
  * Limit of a UTXO scan: an address whose outputs were all spent has no UTXO and counts as unused for the gap; the
- * wallet's recorded indices extend the scan over every address it handed out.
+ * wallet's recorded indices extend the scan over every address it handed out, and a scan lists each of those as used
+ * (zero balance when it holds nothing now).
  */
 import {
   HardkasError,
@@ -53,17 +54,23 @@ export const HD_WALLET_DEFAULT_GAP_LIMIT = 20;
 /** The largest gap limit a scan accepts (each address costs one node request). */
 export const HD_WALLET_MAX_GAP_LIMIT = 1000;
 
-/** One scanned address that holds UTXOs. */
+/**
+ * One used address of a scan: one the wallet's local index handed out (receive or change, below its stored next index),
+ * or one past it that holds UTXOs now. An address that was used and then emptied is listed with zero balance.
+ */
 export interface HdWalletScanEntry {
   readonly account: number;
   readonly chain: HdChain;
   readonly index: number;
   readonly path: string;
   readonly address: string;
+  /** 0 for a handed-out address that holds nothing now (used, then emptied, or never funded). */
   readonly utxoCount: number;
   readonly balanceSompi: bigint;
   /** UTXOs of this address bound to a covenant: never spent by a payment (counted in the balance, not spendable). */
   readonly covenantUtxoCount: number;
+  /** True when the wallet's local index handed this address out (its index is below the chain's stored next index). */
+  readonly handedOut: boolean;
 }
 
 export interface HdWalletScan {
@@ -72,7 +79,12 @@ export interface HdWalletScan {
   readonly network: string;
   readonly account: number;
   readonly gapLimit: number;
-  /** The addresses that hold UTXOs, receive chain first, by index. */
+  /**
+   * BETA-FIX W2: every address the wallet's local index handed out (receive and change, up to the stored indices), with
+   * zero balances where empty, plus any address past them that holds UTXOs; receive chain first, by index. (It listed
+   * only the addresses holding UTXOs, so a used address that was emptied disappeared.) Filter `utxoCount > 0` for the
+   * funded ones.
+   */
   readonly used: readonly HdWalletScanEntry[];
   /** Sum of every UTXO the node lists for the wallet's addresses (covenant ones included), sompi. */
   readonly totalSompi: bigint;
@@ -217,8 +229,10 @@ export class HardkasHdWallets {
           byAddress.set(address, { account, chain, index: i });
           const listed: any[] = (await this.sdk.rpc.getUtxosByAddress(address)) ?? [];
           scanned[chain]++;
-          if (listed.length > 0) {
-            lastUsed = i;
+          // BETA-FIX W2: an address the local index handed out is used even when it holds nothing now (zero balance)
+          const handedOutHere = i < handedOut;
+          if (listed.length > 0) lastUsed = i;
+          if (listed.length > 0 || handedOutHere) {
             const balance = listed.reduce((s, u) => s + BigInt(u.amountSompi ?? 0), 0n);
             totalSompi += balance;
             utxoCount += listed.length;
@@ -230,7 +244,8 @@ export class HardkasHdWallets {
               address,
               utxoCount: listed.length,
               balanceSompi: balance,
-              covenantUtxoCount: listed.filter((u) => covenantIdOf(u) !== undefined).length
+              covenantUtxoCount: listed.filter((u) => covenantIdOf(u) !== undefined).length,
+              handedOut: handedOutHere
             });
           }
         }
@@ -316,7 +331,9 @@ export class HardkasHdWallets {
       observedAtDaaScore = undefined;
     }
     const candidates: any[] = [];
-    for (const entry of scan.used) {
+    // the addresses that hold UTXOs now (`used` also lists handed-out addresses that hold nothing: nothing to spend there)
+    const funded = scan.used.filter((entry) => entry.utxoCount > 0);
+    for (const entry of funded) {
       const res = await this.sdk.query.getSpendableUtxos({
         address: entry.address,
         excludePending: true,
@@ -338,7 +355,7 @@ export class HardkasHdWallets {
     }
     candidates.sort(compareOutpoints);
     // the wallet's first used address stands for the sender (the planner's interface); every candidate is the wallet's
-    const fromAddress = scan.used[0]?.address ?? opened.address(account, "receive", 0);
+    const fromAddress = funded[0]?.address ?? opened.address(account, "receive", 0);
     const provider: UtxoProvider = {
       getUtxos: async () => candidates.map((u) => ({ ...u })),
       getVirtualDaaScore: async () => {

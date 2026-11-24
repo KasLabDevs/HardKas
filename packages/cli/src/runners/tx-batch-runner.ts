@@ -93,6 +93,20 @@ function recordSpent(flow: TxFlowResult, spent: Map<string, string>): void {
   }
 }
 
+/**
+ * BETA-FIX (ISSUE-ONCHAIN-JSON-PRECISION-1, last route) · a batch file's JSON. An "amount" written as a JSON number is
+ * read by its literal when that literal is a plain decimal — 12345678901.12345678 stays those digits, where the double it
+ * became would round it to 12345678901.123457 — so the KAS amount parsed later is exactly what the file says. Any other
+ * number form (an exponent) keeps the number, as before.
+ */
+export function parseBatchFileJson(content: string): any {
+  return JSON.parse(stripBom(content), (key: string, value: unknown, context?: { source?: string }) =>
+    key === "amount" && typeof value === "number" && typeof context?.source === "string" && /^[0-9]+(?:\.[0-9]+)?$/.test(context.source)
+      ? context.source
+      : value
+  );
+}
+
 export async function runTxBatch(options: any) {
   const { file, network = "simulated", json, workspace, passwordEnv, passwordStdin } = options;
 
@@ -108,12 +122,25 @@ export async function runTxBatch(options: any) {
     const { refuseMainnetBroadcast } = await import("../mainnet-guard.js");
     refuseMainnetBroadcast(loaded.config as any, [network], options.oneTransaction ? "tx batch --one-transaction" : "tx batch");
   }
+  // BETA-FIX W2 · AUX-11 (tx send's rule): off the simulator and simnet, nothing is read, planned, signed or sent without
+  // --yes — the file included, and every payment of it (each one used to be sent with the flow's own `yes: true`)
+  {
+    const { declaredNetworkIdOf } = await import("@hardkas/core");
+    const { requireBroadcastConfirmation } = await import("../broadcast-confirmation.js");
+    requireBroadcastConfirmation({
+      command: options.oneTransaction ? "tx batch --one-transaction" : "tx batch",
+      network: String(declaredNetworkIdOf(loaded.config as any, network) ?? network),
+      yes: options.yes === true,
+      json,
+      nothingDone: "Nothing was read, planned, signed, broadcast or written."
+    });
+  }
   const filePath = path.resolve(workspace || process.cwd(), file);
 
   let payments: any[];
   try {
     const content = await fs.readFile(filePath, "utf-8");
-    const parsed = JSON.parse(stripBom(content));
+    const parsed = parseBatchFileJson(content);
     // Accept both flat array and { payments: [...] } wrapper
     if (Array.isArray(parsed)) {
       payments = parsed;

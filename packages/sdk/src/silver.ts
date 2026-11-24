@@ -3,6 +3,7 @@ import path from "node:path";
 import {
   compileSilverScript,
   getSilContract,
+  isMainnetNetworkId,
   silContractBytecodeHex,
   silverP2shAddress,
   silverP2shLock,
@@ -60,8 +61,8 @@ export class HardkasSilver {
   /** The P2SH lock and address of a compiled contract. */
   p2sh(compiled: SilverCompileResult, options: { contract?: string; network?: string } = {}): SilverP2sh {
     const network = options.network ?? "simnet";
-    if (network !== "simnet") {
-      throw new Error(`SILVERSCRIPT_MAINNET_NOT_ENABLED: SilverScript lifecycle runs on simnet only (got ${network}).`);
+    if (isMainnetNetworkId(network)) {
+      throw new Error(`SILVERSCRIPT_MAINNET_NOT_ENABLED: SilverScript lifecycle is disabled on mainnet (got ${network}).`);
     }
     const { name, contract } = getSilContract(compiled.artifact, options.contract);
     const bytecodeHex = silContractBytecodeHex(contract);

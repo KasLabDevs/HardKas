@@ -100,6 +100,14 @@ export async function signTxPlanArtifact(input: {
     );
   }
 
+  // SDK-MAINNET-BROADCAST-GUARD-1 / HK-12: the product's mainnet policy, typed (MAINNET_SIGNING_DISABLED), from the plan's
+  // network, the target's, and the account's. Enforced before execution compatibility or simulator signing.
+  assertMainnetTransactionsDisabled(
+    "sign",
+    [planArtifact.networkId, (planArtifact as any).execution?.network, input.target?.network, (input.account as any)?.network],
+    "accounts signer"
+  );
+
   // ENFORCE EXECUTION COMPATIBILITY BEFORE ANY SIGNER UNLOCK
   const { assertExecutionCompatibility } = await import("@hardkas/core");
   assertExecutionCompatibility({
@@ -126,10 +134,6 @@ export async function signTxPlanArtifact(input: {
       systemRuntimeContext
     ) as SignedTxArtifact;
   }
-
-  // SDK-MAINNET-BROADCAST-GUARD-1 / HK-12: the product's mainnet policy, typed (MAINNET_SIGNING_DISABLED), from the plan's
-  // network and the target's. The constant decides (MAINNET_TRANSACTIONS_ENABLED); `allowMainnet` no longer lifts it.
-  assertMainnetTransactionsDisabled("sign", [planArtifact.networkId, input.target?.network], "accounts signer");
 
   if (account && account.kind === "synthetic") {
     throw new Error(

@@ -1,6 +1,8 @@
 {
   "name": "@hardkas/accounts",
-  "version": "0.13.0-rc.3",
+  "version": "1.0.0",
+  "description": "Accounts, encrypted keystores and signers for HardKAS, the Kaspa L1 development framework: the simulated, dev and real accounts @hardkas/cli and @hardkas/sdk use.",
+  "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "accounts", "keystore", "signer"],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -50,7 +52,7 @@
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/accounts#readme",
+  "homepage": "https://hardkas.dev/docs/",
   "publishConfig": {
     "access": "public"
   }

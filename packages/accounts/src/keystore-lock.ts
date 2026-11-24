@@ -56,17 +56,17 @@ export async function appendToKeystoreJson(
   await withKeystoreLock(keystorePath, async () => {
     let ks: Record<string, any> = {};
     if (fs.existsSync(keystorePath)) {
-      try {
-        const data = await fs.promises.readFile(keystorePath, "utf-8");
-        ks = JSON.parse(data);
-      } catch (e) {
-        // Ignore read/parse errors, assume empty or overwrite
+      const data = await fs.promises.readFile(keystorePath, "utf-8");
+      const parsed = JSON.parse(data);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error(`Invalid keystore.json format at ${keystorePath}: expected a JSON object`);
       }
+      ks = parsed;
     }
 
     ks[alias] = accountData;
 
-    const fd = await fs.promises.open(tempPath, "w");
+    const fd = await fs.promises.open(tempPath, "w", 0o600);
     try {
       await fd.writeFile(JSON.stringify(ks, null, 2));
       await fd.sync(); // fsync

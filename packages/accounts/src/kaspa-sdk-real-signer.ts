@@ -1,4 +1,4 @@
-import { HardkasError } from "@hardkas/core";
+import { HardkasError, assertMainnetTransactionsDisabled } from "@hardkas/core";
 import { covenantIdOf } from "@hardkas/tx-builder";
 import { RealTxSigner, RealTxSigningInput, RealTxSigningResult } from "./real-signer.js";
 import { loadKaspaWasm } from "./signer-backend.js";
@@ -17,6 +17,12 @@ export class KaspaSdkRealTxSigner implements RealTxSigner {
 
   async sign(input: RealTxSigningInput): Promise<RealTxSigningResult> {
     const { plan, account } = input;
+
+    assertMainnetTransactionsDisabled(
+      "sign",
+      [(plan as any)?.networkId, (plan as any)?.execution?.network, (account as any)?.network],
+      "KaspaSdkRealTxSigner"
+    );
 
     // COVENANT-UTXO-PAYMENT-FILTER-1C: as in signTxPlanArtifact, a covenant's UTXO is never a payment input. Refused
     // before the SDK loads or the account's key is read; a covenant is spent only through its own commands.

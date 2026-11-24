@@ -1,3 +1,8 @@
+---
+title: "Reading several nodes (read-only)"
+description: "How HardKAS reads several Kaspa nodes side by side and compares their answers, read-only: it never sends, fails over or re-broadcasts a transaction."
+---
+
 # Reading several nodes (read-only)
 
 HardKAS can read several Kaspa nodes side by side and compare what they answer. The comparison is read-only. It never sends a transaction, never fails a send over to another node and never re-broadcasts one. It is a status prototype (MULTINODE-READ-1): useful for diagnosis, not a basis for deciding what the network accepted.
@@ -39,8 +44,10 @@ hardkas rpc compare --endpoints ws://127.0.0.1:18210 --endpoints ws://127.0.0.1:
 - **Exit codes:**
   - 0 when nothing disagrees;
   - 1 with `MULTINODE_DISAGREEMENT` when something does;
-  - 1 with `MULTINODE_INSUFFICIENT_NODES` when fewer than two nodes of the expected network answered.
-- **Refused before any node is contacted:** fewer than two endpoints, or the same endpoint twice.
+  - 1 with `MULTINODE_NO_NODE_REACHABLE` when no node could be read (each one is named with its reason);
+  - 1 with `MULTINODE_INSUFFICIENT_NODES` when fewer than two nodes of the expected network answered;
+  - 1 with `MULTINODE_P2PID_COLLISION` when two distinct endpoints report the same p2p id.
+- **Refused before any node is contacted** (usage errors, exit 2): fewer than two endpoints (`MULTINODE_INSUFFICIENT_NODES`), the same endpoint twice (`MULTINODE_ENDPOINTS_NOT_UNIQUE`), or a `--lag-threshold` that is not a DAA difference (`MULTINODE_LAG_THRESHOLD_INVALID`).
 - **SDK:** `readNodeSet`, `compareUtxosAcrossNodes` and `observeTxAcrossNodes` take any HardKAS RPC clients.
 
 ## What it does not do

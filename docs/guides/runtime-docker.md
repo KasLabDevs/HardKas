@@ -1,3 +1,9 @@
+---
+title: "Runtime and Docker checks"
+sidebar_label: "Chapter 11: Runtime & Docker Validations"
+description: "Point a local HardKAS app at a real Kaspa node with the RPC backend plugin, without changing its public API."
+---
+
 # Chapter 11: Runtime & Docker Validations
 
 HardKAS allows you to seamlessly transition your local app to a real Kaspa node without altering your public API surface.

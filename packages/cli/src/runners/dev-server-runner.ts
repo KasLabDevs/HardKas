@@ -2,7 +2,17 @@ import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
 import path from "node:path";
 import fs from "node:fs";
+import os from "node:os";
 import { HardkasSchemas } from "@hardkas/artifacts";
+
+/**
+ * The signals that stop the dev server cleanly: Ctrl+C (SIGINT), termination (SIGTERM), the console window closed
+ * (SIGHUP, Windows included) and, on Windows only, Ctrl+Break (SIGBREAK). The send guard releases its lock on the same
+ * ones (@hardkas/dev-server send-guard.ts).
+ */
+const TEARDOWN_SIGNALS: readonly NodeJS.Signals[] = (["SIGINT", "SIGTERM", "SIGHUP", "SIGBREAK"] as const).filter(
+  (sig) => (os.constants.signals as Record<string, number | undefined>)[sig] !== undefined
+);
 
 export async function runDevServer(options: {
   port: string;
@@ -65,13 +75,24 @@ export async function runDevServer(options: {
       host = "0.0.0.0";
     }
 
-    const server = createDevServer({
-      port,
-      host,
-      unsafeExternal: options.unsafeExternal,
-      unsafeNoAuth: options.unsafeNoAuth ?? false,
-      open: options.open
-    });
+    let server: ReturnType<typeof createDevServer>;
+    try {
+      server = createDevServer({
+        port,
+        host,
+        unsafeExternal: options.unsafeExternal,
+        unsafeNoAuth: options.unsafeNoAuth ?? false,
+        open: options.open
+      });
+    } catch (e: any) {
+      // DEV-SERVER-LOCAL-1: a host that is not this machine without --unsafe-external, or a weak HARDKAS_DEV_TOKEN, is a
+      // usage error with its code (nothing was started or written)
+      if (e?.name === "DevServerConfigError" && typeof e.code === "string") {
+        const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+        throw new HardkasCliError(e.code, String(e.message).replace(/^[A-Z_]+: /, "") + " Nothing was started.", { exitCode: HardkasExitCode.USAGE_ERROR });
+      }
+      throw e;
+    }
 
     const serverObj = server as Record<string, unknown>;
     const token = typeof serverObj.token === "string" ? serverObj.token : undefined;
@@ -171,6 +192,12 @@ export async function runDevServer(options: {
       }
     } // Closes else block
 
+    // `--json`: stdout carries the one document above and nothing else; the server's banner, the watcher's and the
+    // access log's lines (console.log in @hardkas/dev-server) go to stderr from here on
+    if (options.json) {
+      console.log = (...args: unknown[]) => console.error(...args);
+    }
+
     const nodeServer = server.start();
 
     if (options.preventTeardown) {
@@ -183,9 +210,9 @@ export async function runDevServer(options: {
       };
     }
 
-    // 4. Safe Teardown on SIGINT/SIGTERM (Clean Exit, No background processes/threads left behind)
+    // 4. Safe Teardown on SIGINT/SIGTERM/SIGHUP (+SIGBREAK on Windows) (Clean Exit, No background processes/threads left behind)
     let isStopping = false;
-    const handleTeardown = async (signal: string) => {
+    const handleTeardown = async (signal: NodeJS.Signals) => {
       if (isStopping) return;
       isStopping = true;
       if (!options.json) {
@@ -205,13 +232,16 @@ export async function runDevServer(options: {
           fs.unlinkSync(path.join(hardkasDir, "dev-server-token"));
         }
       } catch (e) {}
-      process.removeAllListeners("SIGINT");
-      process.removeAllListeners("SIGTERM");
-      process.kill(process.pid, signal as NodeJS.Signals);
+      for (const sig of TEARDOWN_SIGNALS) process.removeAllListeners(sig);
+      try {
+        process.kill(process.pid, signal);
+      } catch {
+        // Windows cannot raise SIGHUP or SIGBREAK (ENOSYS): end as the signal would have
+        process.exit(128 + ((os.constants.signals as Record<string, number | undefined>)[signal] ?? 0));
+      }
     };
 
-    process.on("SIGINT", () => handleTeardown("SIGINT"));
-    process.on("SIGTERM", () => handleTeardown("SIGTERM"));
+    for (const sig of TEARDOWN_SIGNALS) process.on(sig, () => handleTeardown(sig));
 
     // Block forever so the CLI doesn't exit immediately
     await new Promise(() => {});

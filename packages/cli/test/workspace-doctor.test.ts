@@ -35,7 +35,14 @@ function doctor(cwd: string, extra: string[] = [], name = "doctor") {
     })
     .filter(Boolean);
   const modules = fs.existsSync(log) ? fs.readFileSync(log, "utf8").split(/\r?\n/).filter(Boolean).map((u) => u.replace(/\\/g, "/")) : [];
-  return { status: r.status, out: (r.stdout ?? "") + (r.stderr ?? ""), report: docs.find((d: any) => d?.schema === "hardkas.devDoctor.v1"), envelope: docs.find((d: any) => d?.ok === false), modules };
+  return {
+    status: r.status,
+    stdout: r.stdout ?? "",
+    out: (r.stdout ?? "") + (r.stderr ?? ""),
+    report: docs.find((d: any) => d?.schema === "hardkas.devDoctor.v1"),
+    envelope: docs.find((d: any) => d?.ok === false),
+    modules
+  };
 }
 const codes = (report: any) => (report?.checks ?? []).filter((c: any) => c.status === "error").map((c: any) => c.code);
 
@@ -113,6 +120,11 @@ describe("NEW-11 · hardkas doctor workspace", () => {
     expect(codes(r.report)).toContain("ARTIFACT_INVALID");
     expect(r.report.checks.find((c: any) => c.code === "ARTIFACT_INVALID").details.paths[0]).toContain("broken.json");
     expect(r.envelope?.code).toBe("WORKSPACE_DOCTOR_FAILED");
+    // DOCTOR-JSON-ONE-DOCUMENT: stdout is ONE JSON document, the report carrying the failure envelope's fields (it used
+    // to be the report followed by a second `{"ok":false,...}` document, which does not parse as one)
+    const whole = JSON.parse(r.stdout);
+    expect(whole).toMatchObject({ ok: false, code: "WORKSPACE_DOCTOR_FAILED", schema: "hardkas.devDoctor.v1", status: "failed" });
+    expect(whole.checks.map((c: any) => c.code)).toContain("ARTIFACT_INVALID");
   });
 
   it("a corrupt event-ledger tail: APPEND_CORRUPTION, exit 1", { timeout: 300_000 }, async () => {

@@ -50,7 +50,7 @@ async function run() {
         domainOperationReal: true,
         networkSettlementReal: false,
         fallbackUsed: true,
-        packagesExercised: ['@hardkas/toolkit', '@hardkas/core', '@hardkas/react', '@hardkas/simulator-adapters', '@hardkas/wallet-adapter'],
+        packagesExercised: ['@hardkas/toolkit', '@hardkas/core', '@hardkas/wallet-adapter'],
         publicApisExercised: ['WalletToolkit.open', 'WalletToolkit.balance', 'WalletToolkit.history'],
         errors,
         expectedGuards: [],

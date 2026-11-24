@@ -18,7 +18,7 @@ export async function runUp() {
       `\x1b[1mNetwork Mode:\x1b[0m ${networkId} (${loaded.config.networks?.[networkId]?.kind || "default"})`
     );
     UI.info(`\x1b[1mConfig:\x1b[0m       ${loaded.path || "defaults"}`);
-    console.log("");
+    UI.logHuman("");
 
     // 2. Ensure directories
     const runtimeDir = path.join(loaded.cwd, ".hardkas", "runtime");
@@ -47,12 +47,12 @@ export async function runUp() {
         if (health.reachable) {
           UI.success(`RPC available at ${rpcUrl}`);
         } else {
-          console.log(
+          UI.logHuman(
             `  \x1b[33m⚠\x1b[0m RPC not reachable at ${rpcUrl}. Run 'hardkas node start' or check kaspad.`
           );
         }
       } catch (e) {
-        console.log(
+        UI.logHuman(
           `  \x1b[33m⚠\x1b[0m RPC check failed: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
         );
       } finally {
@@ -62,7 +62,7 @@ export async function runUp() {
 
     UI.success(`State directory:    .hardkas/runtime`);
     UI.success(`Receipts directory: .hardkas/receipts`);
-    console.log("");
+    UI.logHuman("");
 
     // 4. Accounts
     UI.info("\x1b[1mAccounts:\x1b[0m");
@@ -72,25 +72,25 @@ export async function runUp() {
         UI.success(`${acc.name} (${acc.kind})`);
       }
     } else {
-      console.log("  No accounts defined in config.");
+      UI.logHuman("  No accounts defined in config.");
     }
-    console.log("");
+    UI.logHuman("");
 
     const port = "7420";
-    console.log(pc.green(`\n✔ HardKAS Runtime Started\n`));
-    console.log(`  ${pc.dim("Dev Server API:")}`);
-    console.log(`    ${pc.white("http://localhost:" + port)}\n`);
-    console.log(`  ${pc.dim("Runtime:")}`);
-    console.log(`    ${pc.white("local deterministic execution environment")}\n`);
-    console.log(`  ${pc.dim("State Authority:")}`);
-    console.log(`    ${pc.white("filesystem artifacts")}\n`);
-    console.log(`  ${pc.dim("Projection Layer:")}`);
-    console.log(`    ${pc.white("SQLite query-store")}\n`);
-    console.log(`  ${pc.dim("Query or inspect via Dev Server API:")}`);
-    console.log(`    - ${pc.white("event timeline")}`);
-    console.log(`    - ${pc.white("provenance graph")}`);
-    console.log(`    - ${pc.white("replay state")}`);
-    console.log(`    - ${pc.white("stale diagnostics")}\n`);
+    UI.logHuman(pc.green(`\n✔ HardKAS Runtime Started\n`));
+    UI.logHuman(`  ${pc.dim("Dev Server API:")}`);
+    UI.logHuman(`    ${pc.white("http://localhost:" + port)}\n`);
+    UI.logHuman(`  ${pc.dim("Runtime:")}`);
+    UI.logHuman(`    ${pc.white("local deterministic execution environment")}\n`);
+    UI.logHuman(`  ${pc.dim("State Authority:")}`);
+    UI.logHuman(`    ${pc.white("filesystem artifacts")}\n`);
+    UI.logHuman(`  ${pc.dim("Projection Layer:")}`);
+    UI.logHuman(`    ${pc.white("SQLite query-store")}\n`);
+    UI.logHuman(`  ${pc.dim("Query or inspect via Dev Server API:")}`);
+    UI.logHuman(`    - ${pc.white("event timeline")}`);
+    UI.logHuman(`    - ${pc.white("provenance graph")}`);
+    UI.logHuman(`    - ${pc.white("replay state")}`);
+    UI.logHuman(`    - ${pc.white("stale diagnostics")}\n`);
 
     const { runDevServer } = await import("./dev-server-runner.js");
     await runDevServer({
@@ -100,7 +100,7 @@ export async function runUp() {
       open: process.stdout.isTTY === true,
       host: "localhost",
       unsafeExternal: false,
-      json: false,
+      json: UI.isJsonMode(),
       showToken: false
     });
   } catch (error) {

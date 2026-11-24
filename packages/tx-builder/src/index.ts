@@ -1,6 +1,9 @@
 export type Sompi = bigint;
 import { estimateTransactionMass, calculateUpstreamMass } from "./mass.js";
 import { DUST_THRESHOLD_SOMPI } from "./verify.js";
+
+/** Maximum extra sompi above required fee absorbed when omitting a non-viable change output (~2-output delta + dust). */
+const MAX_NO_CHANGE_SURPLUS_SOMPI = 1_000_000n;
 export * from "./mass.js";
 export * from "./verify.js";
 export * from "./service.js";
@@ -165,6 +168,7 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
   // attempt (every candidate UTXO, no change); otherwise funds are the cause.
   let nonStandard: Error | undefined;
   let lastAttemptNonStandard = false;
+  let surplusBurnBlocked: { surplus: bigint; requiredFee: bigint } | undefined;
 
   // Returns undefined when the transaction as built would exceed the maximum
   // standard mass: that shape is not viable, and the planner tries another.
@@ -211,11 +215,15 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
     // With a change output: the change amount affects storage mass and the fee
     // affects the change, so settle on a fee that covers the transaction as built.
     let chosen: { mass: bigint; fee: bigint; change?: bigint } | undefined;
-    let fee = selectedAmount - target >= DUST_THRESHOLD_SOMPI ? feeFor(selected, selectedAmount - target)?.fee : undefined;
+    let absorbedSubDustChange = selectedAmount - target < DUST_THRESHOLD_SOMPI;
+    let fee = !absorbedSubDustChange ? feeFor(selected, selectedAmount - target)?.fee : undefined;
     for (let pass = 0; fee !== undefined && pass < 8; pass++) {
       const change = selectedAmount - target - fee;
       // Sub-dust change is absorbed into the fee (matching rusty-kaspa wallet behavior).
-      if (change < DUST_THRESHOLD_SOMPI) break;
+      if (change < DUST_THRESHOLD_SOMPI) {
+        absorbedSubDustChange = true;
+        break;
+      }
       const required = feeFor(selected, change);
       if (!required) break;
       if (required.fee <= fee) {
@@ -225,11 +233,17 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
       fee = required.fee;
     }
 
-    // Without a change output: everything above the target is the fee.
+    // Without a change output: only sub-dust change (or change whose 2-output mass overflows while
+    // leftover excess above the required fee stays within MAX_NO_CHANGE_SURPLUS_SOMPI) is absorbed.
     if (!chosen) {
       const required = feeFor(selected, undefined);
       lastAttemptNonStandard = !required;
       if (!required || selectedAmount < target + required.fee) continue;
+      const excessAboveRequired = selectedAmount - target - required.fee;
+      if (!absorbedSubDustChange && excessAboveRequired > MAX_NO_CHANGE_SURPLUS_SOMPI) {
+        surplusBurnBlocked = { surplus: selectedAmount - target, requiredFee: required.fee };
+        continue;
+      }
       chosen = { mass: required.mass, fee: selectedAmount - target };
     }
 
@@ -276,6 +290,13 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
     }
   }
 
+  if (surplusBurnBlocked) {
+    throw new Error(
+      `TX_CHANGE_SURPLUS_EXCEEDS_CAP: omitting change would burn ${surplusBurnBlocked.surplus} sompi as fee ` +
+        `(required fee ${surplusBurnBlocked.requiredFee} sompi, excess exceeds cap ${MAX_NO_CHANGE_SURPLUS_SOMPI} sompi)` +
+        (lastAttemptNonStandard && nonStandard ? `; ${nonStandard.message}` : "")
+    );
+  }
   if (lastAttemptNonStandard && nonStandard) throw nonStandard;
   throw new Error("Insufficient funds for transaction amount plus estimated fee.");
 }

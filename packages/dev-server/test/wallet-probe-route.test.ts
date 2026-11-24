@@ -155,4 +155,15 @@ describe("R3-C · registered in the dev server: the page through its host check,
     // the server's other routes are untouched by the probe's loopback rule
     expect((await server.app.request("/", { headers: { host } })).status).toBe(200);
   });
+
+  it("BETA-FIX W1 · the root's endpoint catalog lists the probe page", async () => {
+    const root = await (await server.app.request("/", { headers: { host } })).json();
+    expect(root.endpoints.walletProbe).toBe("/wallet-probe");
+  });
+
+  it("BETA-FIX W1 · the page shows the call the session makes (walletSignCallOf: Kastle's signTx, the others' signPskt)", async () => {
+    const html = await (await server.app.request("/wallet-probe", { headers: { host } }, LOOP)).text();
+    expect(html).toContain("walletSignCallOf");
+    expect(html).toContain("walletCall");
+  });
 });

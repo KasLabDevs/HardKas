@@ -299,8 +299,13 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     }
     // RPC-SUBMIT-SAFETY-1: an answer that names no transaction (or another one) is not an accepted submission
     const mapped = mapKaspaSubmitTransactionResult(response);
-    if (mapped.accepted !== false) acceptedTxIdOf(response, expected);
-    return mapped;
+    if (mapped.accepted === false) return mapped;
+    const acceptedTxId = acceptedTxIdOf(response, expected);
+    return {
+      ...mapped,
+      transactionId: mapped.transactionId ?? acceptedTxId,
+      accepted: mapped.accepted ?? true
+    };
   }
 
   async getMempoolEntry(txId: string): Promise<MempoolEntry | null> {
@@ -573,10 +578,11 @@ export function mapKaspaSubmitTransactionResult(result: any): KaspaSubmitTransac
   if (!result) return { raw: result };
 
   const txId = typeof result === "string" ? result : (result.transactionId || result.transaction_id || result.txId || result.tx_id);
+  const rawAccepted = result.accepted ?? result.isAccepted ?? result.success;
 
   return {
     transactionId: txId,
-    accepted: result.accepted !== undefined ? result.accepted : (result.isAccepted || result.success || true),
+    ...(rawAccepted !== undefined && rawAccepted !== null ? { accepted: Boolean(rawAccepted) } : {}),
     raw: result
   };
 }
@@ -689,6 +695,8 @@ export { assertBroadcastNodeSynced, unsyncedBroadcastAllowedOn, type BroadcastNo
 export { canonicalRpcEndpoint, sameRpcEndpoint, rpcEndpointOf } from "./endpoint.js";
 // The transport: the official kaspa-wasm RpcClient, and the factory seam tests use to stand in for it.
 export { officialRpcFactory, toWrpcUrl, type OfficialRpcClientLike, type OfficialRpcFactory } from "./upstream/session.js";
+// RPC-RESPONSE-TOO-LARGE-1: the largest node answer HardKAS reads in one RPC message (100 MiB)
+export { SDK_WEBSOCKET_MAX_PAYLOAD_BYTES } from "./upstream/node-websocket-compat.js";
 export * from "./provider.js";
 export * from "./resilience.js";
 export * from "./wrpc-client.js";

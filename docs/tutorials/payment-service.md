@@ -1,3 +1,9 @@
+---
+title: "Tutorial: payment service"
+sidebar_label: "Chapter 04: Payment Service"
+description: "Build a HardKAS payment service that indexes the chain to know when a Kaspa invoice is actually paid."
+---
+
 # Chapter 04: Payment Service
 
 A payment service needs to index the blockchain to know when an invoice is actually paid.

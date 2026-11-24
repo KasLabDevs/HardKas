@@ -32,6 +32,14 @@ const allowedNonSchema = new Map([
   ['hardkas.release-build.v1', {
     file: 'scripts/check-release-tarballs.mjs',
     reason: 'kind of the release-build stamp (node_modules/.cache/hardkas/release-build.json) that `pnpm release:build` writes and `--pack` checks; it is never packed and no package reads it'
+  }],
+  ['hardkas.devServerLockRecovery.v1', {
+    file: 'packages/cli/src/runners/dev-recover-lock-runner.ts',
+    reason: 'schema of the JSON report `hardkas dev recover-lock --json` prints; a command report, never written or validated as an artifact'
+  }],
+  ['hardkas.localnetReset.v1', {
+    file: 'packages/cli/src/runners/localnet-reset-runner.ts',
+    reason: 'schema of the JSON report `hardkas localnet reset --json` prints; a command report, never written or validated as an artifact'
   }]
 ]);
 

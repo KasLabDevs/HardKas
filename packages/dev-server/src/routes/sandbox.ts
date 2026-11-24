@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { sandboxManager } from "../sandbox/manager.js";
-import { getActiveSession } from "@hardkas/sessions";
+import { getActiveSession } from "@hardkas/core";
 import { devServerEmitter } from "../stream.js";
 
 export const sandboxRoutes = new Hono();

@@ -1,0 +1,460 @@
+{
+  "$comment": "Old hardkas.dev/docs URLs after the one-source migration (BETA-FIX W4, 21-nov-2026). 'legacy': every hand-written page the site published before (its sitemap of 20-nov-2026); each must stay a page or be redirected. 'redirects': old path -> new path, both under /docs. Checked and written by plugins/redirects.mjs at build time.",
+  "legacy": [
+    "/ai/",
+    "/ai/claude-code-and-cursor",
+    "/ai/troubleshooting",
+    "/ai/workflows",
+    "/concepts/accounts/",
+    "/concepts/accounts/accounts-and-addresses",
+    "/concepts/accounts/authority-model",
+    "/concepts/accounts/security",
+    "/concepts/accounts/wallets-vs-accounts",
+    "/concepts/artifact-id",
+    "/concepts/environments",
+    "/concepts/evidence",
+    "/concepts/execution-contract",
+    "/concepts/execution-environments",
+    "/concepts/kaspa-developer-tools-and-ecosystem",
+    "/concepts/kaspa-l1-development-framework",
+    "/concepts/l1-vs-l2",
+    "/concepts/layer-2/boundaries",
+    "/concepts/operations/failure-taxonomy",
+    "/concepts/operations/operational-boundaries",
+    "/concepts/operations/production-boundaries",
+    "/concepts/operations/recovery-model",
+    "/concepts/operations/security-failure-modes",
+    "/concepts/pskt/",
+    "/concepts/pskt/lifecycle",
+    "/concepts/pskt/security",
+    "/concepts/pskt/what-is-pskt",
+    "/concepts/replay",
+    "/concepts/safety",
+    "/concepts/silverscript/compilation-model",
+    "/concepts/silverscript/what-is-silverscript",
+    "/concepts/toccata",
+    "/concepts/toccata/compute-and-pricing",
+    "/concepts/toccata/covenant-ids",
+    "/concepts/toccata/covenants",
+    "/concepts/toccata/transaction-v1",
+    "/concepts/toccata/what-changed",
+    "/concepts/toccata/zk-and-sequencing",
+    "/concepts/transaction-lifecycle",
+    "/concepts/transactions/",
+    "/concepts/transactions/error-model",
+    "/concepts/transactions/fees-and-mass",
+    "/concepts/transactions/planning",
+    "/concepts/transactions/signing",
+    "/concepts/transactions/submission",
+    "/concepts/transactions/utxos",
+    "/concepts/vprogs/architecture",
+    "/concepts/vprogs/proving-pipeline",
+    "/concepts/vprogs/what-is-vprogs",
+    "/concepts/what-is-hardkas",
+    "/getting-started/faq",
+    "/getting-started/first-transaction",
+    "/getting-started/installation",
+    "/getting-started/motivation",
+    "/getting-started/next-steps",
+    "/getting-started/quickstart",
+    "/getting-started/security",
+    "/getting-started/understanding-the-result",
+    "/guides/accounts/development-accounts",
+    "/guides/accounts/real-account",
+    "/guides/accounts/signing",
+    "/guides/covenants/genesis-and-transition",
+    "/guides/hardhat-for-kaspa",
+    "/guides/localnet-node",
+    "/guides/operations/runbook",
+    "/guides/operations/troubleshooting",
+    "/guides/silverscript-ide-and-local-development",
+    "/guides/simulator",
+    "/guides/testing-kaspa-covenants",
+    "/guides/transactions/create-a-transaction",
+    "/guides/transactions/sign-a-transaction",
+    "/guides/transactions/submit-a-transaction",
+    "/guides/zk-l1-verification-and-settlement",
+    "/how-to/bridge-local",
+    "/how-to/chaos-engine",
+    "/how-to/dag-simulation",
+    "/how-to/operator-commands",
+    "/how-to/query-store",
+    "/how-to/rpc-diagnostics",
+    "/how-to/telemetry",
+    "/how-to/verify-evidence",
+    "/ide/",
+    "/ide/artifacts-and-index",
+    "/ide/assistant",
+    "/ide/console-and-terminal",
+    "/ide/covenant-graph",
+    "/ide/deploy-and-run",
+    "/ide/editor-and-compiler",
+    "/ide/install",
+    "/ide/local-node-and-accounts",
+    "/ide/plugins-and-vsx",
+    "/ide/projects-and-workbench",
+    "/ide/settings-and-updates",
+    "/ide/tests-and-debugging",
+    "/qualification/",
+    "/reference/agent-rules",
+    "/reference/architecture",
+    "/reference/cli",
+    "/reference/packages",
+    "/testing/",
+    "/testing/evidence-levels",
+    "/testing/test-suites",
+    "/tutorials/builder-labs",
+    "/guides/pskt/create-and-inspect",
+    "/guides/pskt/multi-party-signing",
+    "/guides/pskt/offline-signing",
+    "/reference/cli/node",
+    "/reference/cli/pskt",
+    "/"
+  ],
+  "redirects": [
+    {
+      "from": "/getting-started/motivation",
+      "to": "/"
+    },
+    {
+      "from": "/concepts/what-is-hardkas",
+      "to": "/"
+    },
+    {
+      "from": "/getting-started/installation",
+      "to": "/start/installation"
+    },
+    {
+      "from": "/getting-started/quickstart",
+      "to": "/start/quickstart"
+    },
+    {
+      "from": "/guides/simulator",
+      "to": "/start/quickstart"
+    },
+    {
+      "from": "/getting-started/first-transaction",
+      "to": "/start/first-transaction"
+    },
+    {
+      "from": "/getting-started/understanding-the-result",
+      "to": "/start/receipts-and-levels"
+    },
+    {
+      "from": "/guides/localnet-node",
+      "to": "/start/simnet-node"
+    },
+    {
+      "from": "/getting-started/faq",
+      "to": "/help/faq"
+    },
+    {
+      "from": "/reference/agent-rules",
+      "to": "/help/faq"
+    },
+    {
+      "from": "/getting-started/next-steps",
+      "to": "/"
+    },
+    {
+      "from": "/reference/architecture",
+      "to": "/status/versioning"
+    },
+    {
+      "from": "/reference/packages",
+      "to": "/status/versioning"
+    },
+    {
+      "from": "/tutorials/builder-labs",
+      "to": "/"
+    },
+    {
+      "from": "/qualification",
+      "to": "/status/claims.generated"
+    },
+    {
+      "from": "/concepts/environments",
+      "to": "/concepts/execution-worlds"
+    },
+    {
+      "from": "/concepts/execution-environments",
+      "to": "/concepts/execution-worlds"
+    },
+    {
+      "from": "/concepts/execution-contract",
+      "to": "/concepts/execution-worlds"
+    },
+    {
+      "from": "/concepts/accounts/accounts-and-addresses",
+      "to": "/concepts/execution-worlds"
+    },
+    {
+      "from": "/concepts/accounts/authority-model",
+      "to": "/concepts/security-model"
+    },
+    {
+      "from": "/concepts/accounts/security",
+      "to": "/concepts/security-model"
+    },
+    {
+      "from": "/concepts/accounts/wallets-vs-accounts",
+      "to": "/concepts/accounts"
+    },
+    {
+      "from": "/concepts/safety",
+      "to": "/concepts/security-model"
+    },
+    {
+      "from": "/concepts/operations/security-failure-modes",
+      "to": "/concepts/security-model"
+    },
+    {
+      "from": "/getting-started/security",
+      "to": "/concepts/security-model"
+    },
+    {
+      "from": "/concepts/evidence",
+      "to": "/concepts/artifact-lifecycle"
+    },
+    {
+      "from": "/concepts/artifact-id",
+      "to": "/concepts/artifact-lifecycle"
+    },
+    {
+      "from": "/concepts/l1-vs-l2",
+      "to": "/concepts/execution-worlds"
+    },
+    {
+      "from": "/concepts/toccata",
+      "to": "/guides/silverscript-covenants/"
+    },
+    {
+      "from": "/concepts/providers",
+      "to": "/concepts/execution-worlds"
+    },
+    {
+      "from": "/concepts/invariants",
+      "to": "/concepts/security-model"
+    },
+    {
+      "from": "/concepts/artifacts",
+      "to": "/concepts/artifact-lifecycle"
+    },
+    {
+      "from": "/concepts/determinism",
+      "to": "/concepts/artifact-lifecycle"
+    },
+    {
+      "from": "/concepts/mental-model",
+      "to": "/concepts/artifact-lifecycle"
+    },
+    {
+      "from": "/concepts/what-hardkas-is",
+      "to": "/"
+    },
+    {
+      "from": "/concepts/architecture",
+      "to": "/concepts/security-model"
+    },
+    {
+      "from": "/concepts/transactions",
+      "to": "/concepts/transaction-lifecycle"
+    },
+    {
+      "from": "/concepts/transactions/planning",
+      "to": "/guides/transactions/plan-sign-send"
+    },
+    {
+      "from": "/concepts/transactions/signing",
+      "to": "/guides/transactions/plan-sign-send"
+    },
+    {
+      "from": "/concepts/transactions/submission",
+      "to": "/guides/transactions/plan-sign-send"
+    },
+    {
+      "from": "/concepts/transactions/utxos",
+      "to": "/guides/transactions/fees-and-mass"
+    },
+    {
+      "from": "/concepts/transactions/fees-and-mass",
+      "to": "/guides/transactions/fees-and-mass"
+    },
+    {
+      "from": "/guides/transactions/create-a-transaction",
+      "to": "/guides/transactions/plan-sign-send"
+    },
+    {
+      "from": "/guides/transactions/sign-a-transaction",
+      "to": "/guides/transactions/plan-sign-send"
+    },
+    {
+      "from": "/guides/transactions/submit-a-transaction",
+      "to": "/guides/transactions/plan-sign-send"
+    },
+    {
+      "from": "/guides/accounts/development-accounts",
+      "to": "/guides/accounts"
+    },
+    {
+      "from": "/guides/accounts/real-account",
+      "to": "/guides/accounts"
+    },
+    {
+      "from": "/guides/accounts/signing",
+      "to": "/guides/transactions/plan-sign-send"
+    },
+    {
+      "from": "/concepts/utxo-management",
+      "to": "/guides/transactions/fees-and-mass"
+    },
+    {
+      "from": "/how-to/verify-evidence",
+      "to": "/guides/artifact-auditing"
+    },
+    {
+      "from": "/concepts/replay",
+      "to": "/guides/replay-verification"
+    },
+    {
+      "from": "/how-to/query-store",
+      "to": "/guides/query-store"
+    },
+    {
+      "from": "/how-to/rpc-diagnostics",
+      "to": "/guides/debugging"
+    },
+    {
+      "from": "/guides/operations/runbook",
+      "to": "/guides/debugging"
+    },
+    {
+      "from": "/guides/operations/troubleshooting",
+      "to": "/guides/troubleshooting"
+    },
+    {
+      "from": "/concepts/operations/operational-boundaries",
+      "to": "/guides/troubleshooting"
+    },
+    {
+      "from": "/concepts/operations/recovery-model",
+      "to": "/guides/troubleshooting"
+    },
+    {
+      "from": "/concepts/operations/failure-taxonomy",
+      "to": "/reference/errors"
+    },
+    {
+      "from": "/concepts/transactions/error-model",
+      "to": "/reference/errors"
+    },
+    {
+      "from": "/concepts/operations/production-boundaries",
+      "to": "/start/what-works"
+    },
+    {
+      "from": "/how-to/bridge-local",
+      "to": "/concepts/layer-2/boundaries"
+    },
+    {
+      "from": "/how-to/operator-commands",
+      "to": "/guides/operator-commands"
+    },
+    {
+      "from": "/how-to/telemetry",
+      "to": "/guides/telemetry"
+    },
+    {
+      "from": "/how-to/chaos-engine",
+      "to": "/guides/chaos-engine"
+    },
+    {
+      "from": "/how-to/dag-simulation",
+      "to": "/guides/dag-simulation"
+    },
+    {
+      "from": "/reference/error-recovery",
+      "to": "/reference/errors"
+    },
+    {
+      "from": "/concepts/silverscript/what-is-silverscript",
+      "to": "/guides/silverscript-covenants/"
+    },
+    {
+      "from": "/concepts/silverscript/compilation-model",
+      "to": "/guides/silverscript-covenants/compile-and-verify"
+    },
+    {
+      "from": "/concepts/toccata/what-changed",
+      "to": "/guides/silverscript-covenants/"
+    },
+    {
+      "from": "/concepts/toccata/covenants",
+      "to": "/guides/silverscript-covenants/covenant-model"
+    },
+    {
+      "from": "/concepts/toccata/covenant-ids",
+      "to": "/guides/silverscript-covenants/covenant-model"
+    },
+    {
+      "from": "/concepts/toccata/transaction-v1",
+      "to": "/guides/silverscript-covenants/tx-v1-and-compute-budget"
+    },
+    {
+      "from": "/concepts/toccata/compute-and-pricing",
+      "to": "/guides/silverscript-covenants/tx-v1-and-compute-budget"
+    },
+    {
+      "from": "/concepts/toccata/zk-and-sequencing",
+      "to": "/guides/silverscript-covenants/zk-and-sequencing"
+    },
+    {
+      "from": "/guides/covenants/genesis-and-transition",
+      "to": "/guides/silverscript-covenants/covenant-genesis-and-transition"
+    },
+    {
+      "from": "/testing",
+      "to": "/contributing/testing"
+    },
+    {
+      "from": "/testing/test-suites",
+      "to": "/contributing/testing"
+    },
+    {
+      "from": "/testing/evidence-levels",
+      "to": "/contributing/evidence-levels"
+    },
+    {
+      "from": "/concepts/pskt/what-is-pskt",
+      "to": "/concepts/pskt/"
+    },
+    {
+      "from": "/concepts/pskt/lifecycle",
+      "to": "/concepts/pskt/"
+    },
+    {
+      "from": "/concepts/pskt/security",
+      "to": "/concepts/pskt/"
+    },
+    {
+      "from": "/guides/pskt/create-and-inspect",
+      "to": "/concepts/pskt/"
+    },
+    {
+      "from": "/guides/pskt/multi-party-signing",
+      "to": "/concepts/pskt/"
+    },
+    {
+      "from": "/guides/pskt/offline-signing",
+      "to": "/concepts/pskt/"
+    },
+    {
+      "from": "/reference/cli/node",
+      "to": "/reference/cli/localnet"
+    },
+    {
+      "from": "/reference/cli/pskt",
+      "to": "/concepts/pskt/"
+    }
+  ]
+}

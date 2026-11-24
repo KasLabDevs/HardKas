@@ -60,6 +60,18 @@ describe("@hardkas/observability · logger", () => {
     expect(JSON.parse(String(warn.mock.calls[0]![0]))).toMatchObject({ level: "warn", event: "w" });
     expect(JSON.parse(String(out.mock.calls[0]![0]))).toMatchObject({ level: "info", event: "i" });
   });
+
+  it("serializes bigint context values cleanly in the default JSON sink", () => {
+    const out = vi.spyOn(console, "log").mockImplementation(() => {});
+    const log = createLogger({ level: "info" });
+    log.info("tx_built", { feeSompi: 203600n, nested: { amount: 100000000n } });
+    expect(out).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String(out.mock.calls[0]![0]))).toMatchObject({
+      level: "info",
+      event: "tx_built",
+      context: { feeSompi: "203600", nested: { amount: "100000000" } }
+    });
+  });
 });
 
 describe("@hardkas/observability · metrics and Prometheus text", () => {

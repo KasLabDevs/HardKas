@@ -349,14 +349,16 @@ export function registerAccountsCommands(program: Command) {
             `Balance:  ${formatSompiToKas(result.balanceSompi)} KAS`
           );
           // G7 g: covenant-bound coins are in the node's balance but no payment spends them (shown only when there are some)
-          if (result.covenantUtxoCount > 0) {
+          if (result.covenantUtxoCount !== null && result.covenantUtxoCount > 0) {
             getOutput().writeLine(
-              `Covenant: ${formatSompiToKas(result.covenantBoundSompi)} KAS in ${result.covenantUtxoCount} covenant-bound UTXO(s), not spendable by a payment`
+              `Covenant: ${formatSompiToKas(result.covenantBoundSompi ?? 0n)} KAS in ${result.covenantUtxoCount} covenant-bound UTXO(s), not spendable by a payment`
             );
-            getOutput().writeLine(`Spendable: ${formatSompiToKas(result.spendableSompi)} KAS`);
+            getOutput().writeLine(`Spendable: ${formatSompiToKas(result.spendableSompi ?? 0n)} KAS`);
           }
-          getOutput().writeLine(`UTXOs:    ${result.utxoCount}`);
+          // RPC-RESPONSE-TOO-LARGE-1: a list too large to read leaves the count unknown (the balance is still the node's)
+          getOutput().writeLine(`UTXOs:    ${result.utxoCount ?? "not counted (see the note)"}`);
           getOutput().writeLine(`Network:  ${result.network}`);
+          if (result.note) getOutput().writeLine(`Note:     ${result.note}`);
         }
       } catch (e) {
         throw e;

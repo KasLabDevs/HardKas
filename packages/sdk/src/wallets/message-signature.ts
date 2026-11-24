@@ -2,14 +2,15 @@ import { walletRefusal } from "./errors.js";
 import { addressNetworkFamily, isMainnetName } from "./networks.js";
 
 /*
- * R3-C · a browser wallet's `signMessage` answer, verified (NOTES-CROSSCHECK §2.3 item 7, UNVERIFIED against the live
- * extensions). BROWSER-SAFE: no Node import; the kaspa-wasm module that verifies is handed in (the page's own, or the
- * managed one on the Node side: wallet-payments.ts `verifyWalletMessage`). Per the notes a wallet answers in one of three
- * shapes:
- *  - KasWare 0.11: 128 hex characters (the 64-byte Schnorr signature);
- *  - older KasWare: 88 base64 characters (the same 64 bytes); a 65-byte decoding is a compact ECDSA/Bitcoin-style message
- *    signature, which kaspa-wasm's `verifyMessage` does not verify: refused, never guessed;
- *  - Kaspire: `{ address, signature }`, the address the wallet says signed (it must be the expected one).
+ * R3-C · a browser wallet's `signMessage` answer, verified. BROWSER-SAFE: no Node import; the kaspa-wasm module that
+ * verifies is handed in (the page's own, or the managed one on the Node side: wallet-payments.ts `verifyWalletMessage`).
+ * A wallet answers in one of three shapes (the hex and object ones VERIFIED against the real extensions on Testnet-10 on
+ * 21-nov-2026):
+ *  - KasWare 0.11.6 and Kastle: 128 hex characters (the 64-byte Schnorr signature);
+ *  - older KasWare (field notes, not seen live): 88 base64 characters (the same 64 bytes); a 65-byte decoding is a compact
+ *    ECDSA/Bitcoin-style message signature, which kaspa-wasm's `verifyMessage` does not verify: refused, never guessed;
+ *  - Kaspire: `{ address, publicKey, signedMessage, signature }`, the address the wallet says signed (it must be the
+ *    expected one); the other fields are not used.
  * The signature is verified with kaspa-wasm's `verifyMessage` against the x-only key of the expected Schnorr P2PK
  * address (read from its script by kaspa-wasm: no hand-written bech32). Anything else is a typed refusal:
  * WALLET_MESSAGE_SIGNATURE_UNREADABLE (a shape HardKAS cannot use), WALLET_MESSAGE_ADDRESS_MISMATCH (Kaspire named

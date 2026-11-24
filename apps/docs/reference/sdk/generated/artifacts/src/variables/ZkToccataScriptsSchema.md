@@ -1,0 +1,11 @@
+[**HardKAS SDK**](../../../README.md)
+
+***
+
+[HardKAS SDK](../../../README.md) / [artifacts/src](../README.md) / ZkToccataScriptsSchema
+
+# Variable: ZkToccataScriptsSchema
+
+> `const` **ZkToccataScriptsSchema**: `ZodObject`\<\{ `authorizationModel`: `ZodOptional`\<`ZodLiteral`\<`"IMAGE_ID_ONLY"`\>\>; `bindingMode`: `ZodOptional`\<`ZodEnum`\<\{ `proof-and-output-bound`: `"proof-and-output-bound"`; `proof-only`: `"proof-only"`; \}\>\>; `bindingPolicy`: `ZodOptional`\<`ZodObject`\<\{ `change`: `ZodOptional`\<`ZodObject`\<\{ `address`: `ZodString`; `amountSompi`: `ZodString`; \}, `$strip`\>\>; `mode`: `ZodEnum`\<\{ `proof-and-output-bound`: `"proof-and-output-bound"`; `proof-only`: `"proof-only"`; \}\>; `payout`: `ZodObject`\<\{ `address`: `ZodString`; `amountSompi`: `ZodString`; \}, `$strip`\>; `utxoBinding`: `ZodOptional`\<`ZodObject`\<\{ `index`: `ZodNumber`; `transactionId`: `ZodString`; \}, `$strip`\>\>; \}, `$strip`\>\>; `boundPayoutAddress`: `ZodOptional`\<`ZodString`\>; `boundPayoutAmount`: `ZodOptional`\<`ZodString`\>; `consensusEnforced`: `ZodOptional`\<`ZodBoolean`\>; `experimental`: `ZodLiteral`\<`true`\>; `fullSignatureScript`: `ZodString`; `imageId`: `ZodString`; `journalHash`: `ZodString`; `p2shAddresses`: `ZodObject`\<\{ `mainnet`: `ZodOptional`\<`ZodString`\>; `simnet`: `ZodString`; `testnet10`: `ZodOptional`\<`ZodString`\>; \}, `$strip`\>; `p2shScriptPublicKey`: `ZodObject`\<\{ `script`: `ZodString`; `version`: `ZodNumber`; \}, `$strip`\>; `precompileOpcode`: `ZodLiteral`\<`"0xa6"`\>; `preparedProof`: `ZodString`; `provingSystemTag`: `ZodLiteral`\<`"0x20"`\>; `receiptClaimCrossCheck`: `ZodOptional`\<`ZodEnum`\<\{ `MATCH`: `"MATCH"`; `NOT_CHECKED`: `"NOT_CHECKED"`; \}\>\>; `receiptClaimDigest`: `ZodOptional`\<`ZodString`\>; `redeemScript`: `ZodString`; `redeemScriptHash`: `ZodString`; `schema`: `ZodLiteral`\<`"hardkas.zk.toccata.scripts.v1"`\>; `sigScript`: `ZodString`; `warnings`: `ZodOptional`\<`ZodArray`\<`ZodObject`\<\{ `code`: `ZodString`; `file`: `ZodOptional`\<`ZodString`\>; `message`: `ZodString`; \}, `$strip`\>\>\>; \}, `$strip`\>
+
+Defined in: [packages/artifacts/src/schemas.ts:1753](https://github.com/KasLabDevs/HardKas/blob/bba613f3ee75889e713da1a9df5325e3e3524361/packages/artifacts/src/schemas.ts#L1753)

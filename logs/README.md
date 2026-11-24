@@ -1,14 +1,15 @@
 # `logs/`: retired merchant-compatibility results. Not evidence.
 
-**Status: INVALID EVIDENCE. Do not cite these files.** They are kept unchanged as a record of the defect that the
-2026-11-06 audit reported (HK-07, SIM-12) and the counter-audit extended (CA-EV-06). Removing them needs the owner's
-authorization.
+**Status: INVALID EVIDENCE. Do not cite these files.** The files in `logs/` are kept unchanged as a record of the
+defect that the 2026-11-06 audit reported (HK-07, SIM-12) and the counter-audit extended (CA-EV-06). Removing them
+needs the owner's authorization. The four files of the earlier v2 battery at the repository root were removed on
+2026-11-20; they remain in git history.
 
 | File | Produced by | Commit | Run |
 | :-- | :-- | :-- | :-- |
 | `logs/merchant-compat-simulator.jsonl`, `-simnet.jsonl`, `-testnet.jsonl` | retired v1 battery (`scripts/run-merchant-compatibility-battery.mjs`) | `b36117860` | 2026-11-03 23:55 UTC |
 | `logs/merchant-compatibility-results.json` | the earlier v2 battery | `b36117860`, `c383daf77` | 2026-11-04 09:28 and 09:43 UTC |
-| `merchant-compatibility-summary.md`, `-inventory.md`, `-failures.md`, `-matrix.csv` (repository root) | the earlier v2 battery, from the results.json above | `b36117860` | 2026-11-04 |
+| `merchant-compatibility-summary.md`, `-inventory.md`, `-failures.md`, `-matrix.csv` (formerly at the repository root; removed on 2026-11-20, in git history) | the earlier v2 battery, from the results.json above | `b36117860` | 2026-11-04 |
 
 ## Why none of the rows counts as evidence
 

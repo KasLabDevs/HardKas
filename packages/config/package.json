@@ -1,6 +1,8 @@
 {
   "name": "@hardkas/config",
-  "version": "0.13.0-rc.3",
+  "version": "1.0.0",
+  "description": "Loading and resolution of hardkas.config.* for HardKAS (Kaspa L1): networks, accounts, execution targets and endpoints.",
+  "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "config"],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -42,7 +44,7 @@
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/config#readme",
+  "homepage": "https://hardkas.dev/docs/",
   "publishConfig": {
     "access": "public"
   }

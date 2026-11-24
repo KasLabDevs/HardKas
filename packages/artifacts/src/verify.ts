@@ -662,7 +662,12 @@ export function verifyArtifactSemantics(
 
     // The target is verified again under the caller's context and must BE the referenced identity.
     const checkReference = (ref: string, kind: string, refObj: any): boolean => {
-      const integrity = verifyArtifactIntegritySync(refObj, context);
+      // Legacy parents referenced by a migrated descendant still verify contentHash, schema and signatures
+      // without failing on MIGRATION_REQUIRED under strict parent traversal.
+      const integrity = verifyArtifactIntegritySync(
+        refObj,
+        kind === "parent" ? { ...context, strict: false } : context
+      );
       if (!integrity.ok) {
         addIssue({
           code: "REFERENCE_HASH_MISMATCH",
@@ -774,6 +779,9 @@ export function verifyArtifactSemantics(
       if (context.parent && typeof context.parent === "object") {
         const explicit = checkArtifactIdentity(context.parent);
         if (explicit.ok && explicit.artifactId === parentId) outcome = { obj: context.parent };
+        else if ((context.parent as any)?.contentHash === parentId || (context.parent as any)?.lineage?.artifactId === parentId) {
+          outcome = { obj: context.parent };
+        }
       }
       if (!outcome) outcome = resolveReference(parentId, "parent");
       if ("issue" in outcome) {
@@ -803,24 +811,26 @@ export function verifyArtifactSemantics(
         }
       } else {
         parentObj = outcome.obj;
-        try {
-          // Recursively verify parent semantic checks. The explicit `parent` hint
-          // belongs to THIS artifact only; the parent's own parent resolves from the store.
-          const { parent: _explicitParent, ...inherited } = context;
-          const parentSem = verifyArtifactSemantics(parentObj, {
-            ...inherited,
-            strict: true,
-            visitedArtifacts: new Set(visitedArtifacts)
-          });
-          if (!parentSem.ok) {
-            parentSem.issues.forEach((issue) => addIssue(issue));
+        if (checkReference(parentId, "parent", parentObj)) {
+          try {
+            // Recursively verify parent semantic checks. The explicit `parent` hint
+            // belongs to THIS artifact only; the parent's own parent resolves from the store.
+            const { parent: _explicitParent, ...inherited } = context;
+            const parentSem = verifyArtifactSemantics(parentObj, {
+              ...inherited,
+              strict: true,
+              visitedArtifacts: new Set(visitedArtifacts)
+            });
+            if (!parentSem.ok) {
+              parentSem.issues.forEach((issue) => addIssue(issue));
+            }
+          } catch (e: unknown) {
+            addIssue({
+              code: "PARENT_CORRUPT",
+              severity: "error",
+              message: `Failed to verify parent ${parentId}: ${(e as Error).message}`
+            });
           }
-        } catch (e: unknown) {
-          addIssue({
-            code: "PARENT_CORRUPT",
-            severity: "error",
-            message: `Failed to verify parent ${parentId}: ${(e as Error).message}`
-          });
         }
       }
     }

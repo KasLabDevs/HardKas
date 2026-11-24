@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/storage-postgres",
-  "version": "0.13.0-rc.3",
+  "version": "1.0.0",
   "private": true,
   "license": "MIT",
   "description": "PostgreSQL persistence layer for HardKAS",
@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "postgres": "^3.4.4",
-    "@hardkas/jobs": "workspace:*",
     "@hardkas/toolkit": "workspace:*"
   },
   "devDependencies": {

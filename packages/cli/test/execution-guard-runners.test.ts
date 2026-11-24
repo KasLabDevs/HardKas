@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { runTxPlan } from "../src/runners/tx-plan-runner.js";
 import { HardkasConfig } from "@hardkas/config";
 
-// Mock @hardkas/config, @hardkas/accounts, @hardkas/node-orchestrator, @hardkas/kaspa-rpc
+// Mock @hardkas/config, @hardkas/accounts, @hardkas/node-runner, @hardkas/kaspa-rpc
 vi.mock("@hardkas/config", async (importOriginal) => {
   const actual: any = await importOriginal();
   return {
@@ -127,7 +127,7 @@ describe("Execution Guard - CLI Runners", () => {
       };
     });
 
-    vi.doMock("@hardkas/node-orchestrator", () => ({
+    vi.doMock("@hardkas/node-runner", () => ({
       resolveRuntimeConfig: () => ({ rpcUrl: "http://mock" })
     }));
 

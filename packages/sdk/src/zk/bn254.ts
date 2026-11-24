@@ -136,8 +136,17 @@ export function fp2Sqrt(a: Fp2): Fp2 | undefined {
 /** b' = 3 / (9 + u): the constant of the sextic twist that carries G2. */
 export const BN254_G2_B: Fp2 = fp2Mul([3n, 0n], fp2Inv([9n, 1n]));
 
+function isInField(v: bigint): boolean {
+  return v >= 0n && v < Q;
+}
+
+function assertInField(v: bigint, label: string): void {
+  if (!isInField(v)) throw new RangeError(`BN254: ${label} coordinate outside [0, q)`);
+}
+
 export function g1IsOnCurve(p: G1Affine): boolean {
   if (p.infinity) return true;
+  if (!isInField(p.x) || !isInField(p.y)) return false;
   const lhs = (p.y * p.y) % Q;
   const rhs = fpMod(p.x * p.x * p.x + 3n);
   return lhs === rhs;
@@ -145,6 +154,7 @@ export function g1IsOnCurve(p: G1Affine): boolean {
 
 export function g2IsOnCurve(p: G2Affine): boolean {
   if (p.infinity) return true;
+  if (!isInField(p.x[0]) || !isInField(p.x[1]) || !isInField(p.y[0]) || !isInField(p.y[1])) return false;
   const lhs = fp2Sqr(p.y);
   const rhs = fp2Add(fp2Mul(fp2Sqr(p.x), p.x), BN254_G2_B);
   return fp2Eq(lhs, rhs);
@@ -196,9 +206,17 @@ function g2JacAddAffine(acc: G2Jac, q: G2Affine): G2Jac {
 function g2MulJac(p: G2Affine, k: bigint): G2Jac {
   let acc: G2Jac = { X: FP2_ONE, Y: FP2_ONE, Z: FP2_ZERO };
   if (p.infinity || k === 0n) return acc;
-  for (let i = k.toString(2).length - 1; i >= 0; i--) {
+  // The scalar is NOT reduced mod r: g2IsInSubgroup multiplies by r itself, and a reduction would turn that into 0*P
+  // (the point at infinity) for every point, so a point outside the subgroup would pass. A negative scalar is [-k](-P).
+  let base = p;
+  let kk = k;
+  if (kk < 0n) {
+    kk = -kk;
+    base = { x: p.x, y: fp2Sub(FP2_ZERO, p.y), infinity: false };
+  }
+  for (let i = kk.toString(2).length - 1; i >= 0; i--) {
     acc = g2JacDouble(acc);
-    if ((k >> BigInt(i)) & 1n) acc = g2JacAddAffine(acc, p);
+    if ((kk >> BigInt(i)) & 1n) acc = g2JacAddAffine(acc, base);
   }
   return acc;
 }
@@ -280,6 +298,10 @@ function fp2IsNegative(y: Fp2): boolean {
 }
 
 export function g1Compress(p: G1Affine): Uint8Array {
+  if (!p.infinity) {
+    assertInField(p.x, "G1.x");
+    assertInField(p.y, "G1.y");
+  }
   const out = bigintToLe(p.infinity ? 0n : p.x, 32);
   if (p.infinity) out[31] = (out[31] as number) | FLAG_INFINITY;
   else if (fpIsNegative(p.y)) out[31] = (out[31] as number) | FLAG_Y_NEGATIVE;
@@ -287,6 +309,12 @@ export function g1Compress(p: G1Affine): Uint8Array {
 }
 
 export function g2Compress(p: G2Affine): Uint8Array {
+  if (!p.infinity) {
+    assertInField(p.x[0], "G2.x[0]");
+    assertInField(p.x[1], "G2.x[1]");
+    assertInField(p.y[0], "G2.y[0]");
+    assertInField(p.y[1], "G2.y[1]");
+  }
   const out = new Uint8Array(64);
   out.set(bigintToLe(p.infinity ? 0n : p.x[0], 32), 0);
   out.set(bigintToLe(p.infinity ? 0n : p.x[1], 32), 32);

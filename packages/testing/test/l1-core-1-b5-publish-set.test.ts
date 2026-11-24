@@ -70,19 +70,16 @@ describe("L1-CORE-1 B5 · the published set", () => {
   const byName = new Map(all.filter((w) => w.manifest.name).map((w) => [w.manifest.name!, w]));
   const published = all.filter((w) => w.manifest.name && w.manifest.private !== true);
 
-  it("is exactly the list of docs/status/versioning.md, 22 packages", () => {
+  it("is exactly the list of docs/status/versioning.md, 18 packages", () => {
     const listed = documentedPackages("## Published packages");
     expect(new Set(listed).size, "no package is listed twice").toBe(listed.length);
     expect(sorted(published.map((w) => w.manifest.name!))).toEqual(sorted(listed));
-    expect(listed).toHaveLength(22);
+    expect(listed).toHaveLength(18);
   });
 
   it("the 8 packages without a consumer are private, listed as not published, and still workspace packages", () => {
     const eight = [
-      "@hardkas/client",
-      "@hardkas/react",
       "@hardkas/wallet-adapter",
-      "@hardkas/simulator-adapters",
       "@hardkas/plugin-local-indexer",
       "@hardkas/plugin-rpc-backend",
       "@hardkas/sync-daemon",

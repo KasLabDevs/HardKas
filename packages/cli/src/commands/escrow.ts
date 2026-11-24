@@ -15,6 +15,7 @@ import {
 import { submitSilverTransaction } from "./silver.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 import { getOutput } from "../output.js";
+import { broadcastYesHelp, requireBroadcastConfirmation } from "../broadcast-confirmation.js";
 
 function out() {
   return getOutput();
@@ -216,7 +217,7 @@ export function registerEscrowCommands(program: Command) {
       let compiled: Awaited<ReturnType<typeof compileSilverScript>>;
       let lock: { version: number; script: string };
       let k: any;
-      const { ESCROW_V1_SOURCE, ESCROW_V1_CONTRACT_NAME } = await import("@hardkas/escrow");
+      const { ESCROW_V1_SOURCE, ESCROW_V1_CONTRACT_NAME } = await import("@hardkas/sdk");
       try {
         // C-4 · the escrow's own constructor arguments (no placeholder keys, no destination or amount derived from the
         // rescue), then the v1 escrow they compile (pinned silverc), which must be --address: before anything is read
@@ -418,6 +419,7 @@ export function registerEscrowCommands(program: Command) {
     .description("Finalize and broadcast the signed rescue transaction to the network")
     .option("--network <network>", "Network (default: the draft's); must be the draft's")
     .option("--url <url>", "Node wRPC (JSON) endpoint (default: the one the workspace declares for the draft's network; simnet: the canonical localnet)")
+    .option("--yes", broadcastYesHelp("the rescue"), false)
     .option("--json", "Output as JSON", false)
     .action(async (draftFile: string, opts: any) => {
       const filePath = path.resolve(process.cwd(), draftFile);
@@ -435,6 +437,14 @@ export function registerEscrowCommands(program: Command) {
       // is sent: container + digest for the managed localnet, its own report for any other node (only simnet was proven)
       const { resolveL1NodeTarget, proveL1Node } = await import("../runners/l1-node-target.js");
       const target = await resolveL1NodeTarget(String(network), opts.url);
+      // BETA-FIX W2 · AUX-11 (tx send's rule): off simnet nothing is finalized or sent without --yes
+      requireBroadcastConfirmation({
+        command: "escrow rescue-v1 broadcast",
+        network: String(network),
+        yes: opts.yes,
+        json: opts.json,
+        nothingDone: "Nothing was finalized, broadcast or written; no node was contacted."
+      });
 
       if (!pkg.signatures?.buyer || !pkg.signatures?.seller) {
         return fail("RESCUE_INCOMPLETE_SIGNATURES", "Rescue requires both 'buyer' and 'seller' signatures before broadcast.");
@@ -483,6 +493,7 @@ const ESCROW_URL_HELP =
 const ESCROW_PASSWORD_ENV_HELP = "Read the keystore password of the encrypted account this command signs with from this environment variable (development accounts need none)";
 const ESCROW_PASSWORD_STDIN_HELP = "Read the keystore password of the encrypted account this command signs with from stdin";
 const ESCROW_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const ESCROW_NOTHING_DONE = "Nothing was read, signed, broadcast or written; no node was contacted.";
 
 /** A HardkasError of the SDK as the CLI fails with it: same code, an exit code for its kind. */
 function escrowSdkFailure(e: unknown): never {
@@ -745,9 +756,12 @@ export function registerEscrowLifecycleCommands(escrow: Command) {
     .option("--timeout <seconds>", "With --wait: how long to wait", "120")
     .option("--password-env <env>", ESCROW_PASSWORD_ENV_HELP)
     .option("--password-stdin", ESCROW_PASSWORD_STDIN_HELP, false)
+    .option("--yes", broadcastYesHelp("the funding"), false)
     .option("--json", "Output as JSON", false)
     .action(async (id: string, opts: any) => {
       const network = await escrowNetworkOf(opts.network, id);
+      // BETA-FIX W2 · AUX-11 (tx send's rule): off simnet nothing is read, signed or sent without --yes
+      requireBroadcastConfirmation({ command: "escrow fund", network, yes: opts.yes, json: opts.json, nothingDone: ESCROW_NOTHING_DONE });
       const result = await withEscrowNode(network, opts.url, "escrow fund", async (sdk) => {
         const keystorePassword = await escrowPassword(sdk, String(opts.from), opts);
         return sdk.escrow.fund(id, { account: String(opts.from), ...(keystorePassword !== undefined ? { keystorePassword } : {}), ...(opts.wait ? { waitMs: Number(opts.timeout) * 1000 } : {}) });
@@ -858,9 +872,13 @@ export function registerEscrowLifecycleCommands(escrow: Command) {
     .option("--url <url>", ESCROW_URL_HELP)
     .option("--wait", "Wait until a chain block accepts the release (RELEASED)", false)
     .option("--timeout <seconds>", "With --wait: how long to wait", "120")
+    .option("--yes", broadcastYesHelp("the release"), false)
     .option("--json", "Output as JSON", false)
     .action(async (id: string, opts: any) => {
       const network = await escrowNetworkOf(opts.network, id);
+      // BETA-FIX W2 · AUX-11 (tx send's rule): off simnet nothing is read, recorded or sent without --yes (the --signatures
+      // files are not added to the record either)
+      requireBroadcastConfirmation({ command: "escrow release", network, yes: opts.yes, json: opts.json, nothingDone: ESCROW_NOTHING_DONE });
       const requests = ((opts.signatures ?? []) as string[]).map((f) => readRequestFile(f));
       if (requests.length > 0) {
         await withEscrowSdk(network, async (sdk) => {

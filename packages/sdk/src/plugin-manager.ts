@@ -1,4 +1,5 @@
 import { HardkasError } from "@hardkas/core";
+import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 import type { 
   HardkasPlugin,
   BeforeArtifactWriteContext,
@@ -135,6 +136,14 @@ export class HardkasPluginManager {
 
   // --- HOOK DISPATCHERS ---
 
+  private sealPluginRecord<R extends Record<string, unknown>>(body: R): R & { hashVersion: number; contentHash: string } {
+    const withVersion = { ...body, hashVersion: CURRENT_HASH_VERSION };
+    return {
+      ...withVersion,
+      contentHash: calculateContentHash(withVersion, CURRENT_HASH_VERSION)
+    };
+  }
+
   private async dispatchBeforeHook<T>(hookName: keyof NonNullable<HardkasPlugin["hooks"]>, ctx: T): Promise<void> {
     for (const plugin of this.plugins) {
       const hookFn = plugin.hooks?.[hookName] as ((c: T) => Promise<void>) | undefined;
@@ -144,7 +153,7 @@ export class HardkasPluginManager {
         } catch (e: any) {
           if (e.code === "PLUGIN_ACTION_BLOCKED") {
             // Write PluginDecision artifact
-            await this.hk.artifacts.write({
+            await this.hk.artifacts.write(this.sealPluginRecord({
               schema: "PluginDecision",
               pluginName: plugin.name,
               pluginVersion: plugin.version,
@@ -152,7 +161,7 @@ export class HardkasPluginManager {
               decision: "blocked",
               reason: e.message,
               timestamp: new Date().toISOString()
-            } as any, { internal: true, bypassHooks: true });
+            }) as any, { internal: true, bypassHooks: true });
             throw e; // Rethrow to halt execution
           }
           throw e; // Unhandled error during before* hook
@@ -168,19 +177,20 @@ export class HardkasPluginManager {
         try {
           await hookFn(ctx);
         } catch (e: any) {
-          // Write PluginHookFailure artifact
-          await this.hk.artifacts.write({
-            schema: "PluginHookFailure",
-            pluginName: plugin.name,
-            pluginVersion: plugin.version,
-            hook: hookName,
-            error: e.message,
-            timestamp: new Date().toISOString()
-          } as any, { internal: true, bypassHooks: true });
+          // After-hooks are non-fatal: record failure if possible and continue
+          try {
+            await this.hk.artifacts.write(this.sealPluginRecord({
+              schema: "PluginHookFailure",
+              pluginName: plugin.name,
+              pluginVersion: plugin.version,
+              hook: hookName,
+              error: e?.message || String(e),
+              timestamp: new Date().toISOString()
+            }) as any, { internal: true, bypassHooks: true });
+          } catch {}
 
-          // Non-fatal, just log and continue
           if ((this.hk.config as any).logger) {
-            (this.hk.config as any).logger.warn(`Plugin '${plugin.name}' failed in hook '${String(hookName)}': ${e.message}`);
+            (this.hk.config as any).logger.warn(`Plugin '${plugin.name}' failed in hook '${String(hookName)}': ${e?.message || String(e)}`);
           }
         }
       }

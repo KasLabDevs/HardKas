@@ -12,6 +12,8 @@ export type L2SafetyErrorCode =
   // MAINNET TOTAL LOCKDOWN: the same code as every L1 layer (@hardkas/core) for a refused mainnet connection
   | "MAINNET_CONNECTION_DISABLED"
   | "L2_WRITE_DISABLED"
+  // AUDIT 2026-11-21 · A3: a network of undeclared environment off loopback
+  | "L2_ENVIRONMENT_UNDECLARED"
   | "L2_ENDPOINT_MISMATCH"
   | "L2_FEE_POLICY_REQUIRED"
   | "L2_FEE_LIMIT_EXCEEDED"

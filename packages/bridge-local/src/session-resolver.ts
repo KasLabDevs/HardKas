@@ -1,4 +1,4 @@
-import { getActiveSession, loadSessionStore } from "@hardkas/sessions";
+import { getActiveSession, loadSessionStore } from "@hardkas/core";
 import { resolveHardkasAccountAddress, listHardkasAccounts } from "@hardkas/accounts";
 import { LoadedHardkasConfig } from "@hardkas/config";
 
@@ -68,12 +68,13 @@ export async function resolveBridgeLocalContext(
   }
 
   // 4. Failure
+  // There is no `hardkas bridge` command (removed) and `hardkas session` is hidden: name the options of this function.
   throw new Error(
     "No bridge context resolved.\n\n" +
-      "Provide one of:\n" +
-      "  hardkas bridge local plan --amount 100 --session <name>\n" +
-      "  hardkas bridge local plan --amount 100 --from <wallet> --to-igra <0x...>\n" +
-      "  hardkas session use <name>"
+      "Pass one of these to resolveBridgeLocalContext:\n" +
+      "  { from: <L1 wallet>, toIgra: <0x… L2 address> }\n" +
+      "  { sessionName: <a session in the session store> }\n" +
+      "or set an active session in the session store."
   );
 }
 

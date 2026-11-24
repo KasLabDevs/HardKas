@@ -1,6 +1,6 @@
 import { loadHardkasConfig, declaredNodeEndpoint, resolveNodeEndpoint } from "@hardkas/config";
 import { loadRealAccountStore, getRealDevAccount } from "@hardkas/accounts";
-import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
+import { JsonWrpcKaspaClient, type KaspaRpcUtxo } from "@hardkas/kaspa-rpc";
 import { formatSompiToKas, type NetworkId } from "@hardkas/core";
 import { partitionCovenantUtxos } from "@hardkas/tx-builder";
 import { invocationWorkspaceRoot, requireExistingWorkspace } from "../workspace-root.js";
@@ -11,18 +11,24 @@ export interface AccountBalanceResult {
   address: string;
   /** The balance as read (the node's, or the simulator state's sum); covenant-bound coins included. */
   balanceSompi: bigint;
-  utxoCount: number;
+  /**
+   * RPC-RESPONSE-TOO-LARGE-1: null when the node's UTXO list of the address is too large to read (more than about
+   * 277,000 UTXOs, RPC_RESPONSE_TOO_LARGE); `note` then says so. The balance is the node's own total either way.
+   */
+  utxoCount: number | null;
   network: string;
   /**
    * G7 g (notes cross-check): the listed UTXOs without a covenant id — what a payment, sweep or consolidation may select
    * (every planner leaves covenant-bound UTXOs out). A coinbase output still maturing is counted here. Read from the
    * UTXO list, a second read after the balance's: with coins arriving between the two, spendable + covenant-bound may
-   * differ from `balanceSompi`.
+   * differ from `balanceSompi`. Null, with the two below, when the list is too large to read (see `utxoCount`).
    */
-  spendableSompi: bigint;
+  spendableSompi: bigint | null;
   /** G7 g: the listed UTXOs that carry a covenant id (KIP-20): they belong to a covenant and are spent only through it. */
-  covenantBoundSompi: bigint;
-  covenantUtxoCount: number;
+  covenantBoundSompi: bigint | null;
+  covenantUtxoCount: number | null;
+  /** RPC-RESPONSE-TOO-LARGE-1: present only when the UTXO list could not be read for its size (why the counts are null). */
+  note?: string;
 }
 
 /** G7 g: the amounts of a UTXO list split into plain (spendable by a payment) and covenant-bound. */
@@ -145,12 +151,38 @@ export async function runAccountsBalance(
     // NETWORK_ENDPOINT_REQUIRED before any connection
     const rpcUrl = resolveNodeEndpoint({ config: loadedConfig.config, networkId: network, explicitUrl: provider.endpoint }).url;
 
+    // M4: the address is judged by its prefix before any connection
+    (await import("./address-network-guard.js")).assertAddressReadable(address, network, "accounts balance");
+
     // NODE-NETWORK-IDENTITY-1: a balance is read only from a node that says it serves the queried network
     const client = new JsonWrpcKaspaClient({ rpcUrl, expectedNetworkId: network });
 
     try {
+      // the total is the node's own (getBalancesByAddresses: one number, whatever the UTXO count)
       const balance = await client.getBalanceByAddress(address);
-      const utxos = await client.getUtxosByAddress(address);
+      let utxos: KaspaRpcUtxo[];
+      try {
+        utxos = await client.getUtxosByAddress(address);
+      } catch (e) {
+        // RPC-RESPONSE-TOO-LARGE-1: the list is only for the counts and the covenant split; an address whose list is
+        // too large to read still has its balance (it failed here with UNKNOWN_ERROR). Any other failure is the command's.
+        if ((e as { code?: unknown } | null | undefined)?.code !== "RPC_RESPONSE_TOO_LARGE") throw e;
+        return {
+          name,
+          address,
+          balanceSompi: balance.balanceSompi,
+          utxoCount: null,
+          network,
+          spendableSompi: null,
+          covenantBoundSompi: null,
+          covenantUtxoCount: null,
+          note:
+            "UTXOs not counted: the node's UTXO list of this address is larger than the 100 MiB HardKAS reads in one RPC message " +
+            "(more than about 277,000 UTXOs; RPC_RESPONSE_TOO_LARGE), so the UTXO count and the spendable/covenant-bound split " +
+            "are unknown. The balance is the node's own total. Commands that need the list (tx plan, accounts consolidate, " +
+            "rpc utxos) fail for this address until paginated UTXO reads exist."
+        };
+      }
 
       return {
         name,

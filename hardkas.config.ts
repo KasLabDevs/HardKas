@@ -1,7 +1,7 @@
 import { defineHardkasConfig } from "@hardkas/config";
 
 export default defineHardkasConfig({
-  // HardKAS v0.13.0-rc.3 Configuration
+  // HardKAS v1.0.0 Configuration
   defaultNetwork: "simulated",
 
   networks: {
@@ -14,7 +14,7 @@ export default defineHardkasConfig({
       kind: "kaspa-node",
       network: "simnet",
       rpcUrl: "ws://127.0.0.1:18210",
-      description: "Local Docker kaspad on simnet — requires hardkas node start"
+      description: "Local Docker kaspad on simnet — requires hardkas localnet start --toccata"
     },
     "testnet-12": {
       kind: "kaspa-node",

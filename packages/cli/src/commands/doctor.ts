@@ -545,8 +545,11 @@ export async function runDoctorChecks(
   // an unreachable daemon is skipped there, or a warning when the workspace also declares a localnet target
   const simulatorDefault = !publicNetwork && !ownNodeNetwork ? await defaultTargetIsSimulator(root) : undefined;
   let dockerDaemonOk = false;
+  // DOCKER-PROBE-TIMEOUT-1: a Docker that does not answer is unreachable; a hung Docker Desktop made doctor wait forever
+  const { DOCKER_PROBE_TIMEOUT_MS } = await import("@hardkas/node-runner");
+  let notReachable = "Not reachable";
   try {
-    await execa("docker", ["info"]);
+    await execa("docker", ["info"], { timeout: DOCKER_PROBE_TIMEOUT_MS });
     dockerDaemonOk = true;
     addCheck({
       name: "Docker daemon",
@@ -555,7 +558,9 @@ export async function runDoctorChecks(
       status: "pass",
       message: "Reachable"
     });
-  } catch {
+  } catch (e: any) {
+    const timedOut = e?.timedOut === true;
+    if (timedOut) notReachable = `Not reachable ('docker info' did not answer within ${DOCKER_PROBE_TIMEOUT_MS / 1000} s)`;
     addCheck(
       publicNetwork || ownNodeNetwork
         ? {
@@ -563,7 +568,7 @@ export async function runDoctorChecks(
             category: "docker",
             code: "DOCKER_NOT_NEEDED",
             status: "skip",
-            message: `Not reachable; not needed by this workspace: it runs on ${publicNetwork ?? ownNodeNetwork} through the endpoint it declares and has no localnet target (the localnet and node commands, and 'hardkas doctor node', need it)`
+            message: `${notReachable}; not needed by this workspace: it runs on ${publicNetwork ?? ownNodeNetwork} through the endpoint it declares and has no localnet target (the localnet and node commands, and 'hardkas doctor node', need it)`
           }
         : simulatorDefault
           ? {
@@ -572,17 +577,19 @@ export async function runDoctorChecks(
               code: "DOCKER_NOT_NEEDED",
               status: simulatorDefault.declaresLocalnet ? "warn" : "skip",
               message: simulatorDefault.declaresLocalnet
-                ? "Not reachable; the workspace's default target is the simulator, which needs no Docker, but it also declares a localnet target, which does (the localnet and node commands, and 'hardkas doctor node', need it)"
-                : "Not reachable; not needed by this workspace: its default target is the simulator, which needs no Docker (the localnet and node commands, and 'hardkas doctor node', need it)",
-              ...(simulatorDefault.declaresLocalnet ? { suggestion: "Start Docker before using the localnet target." } : {})
+                ? `${notReachable}; the workspace's default target is the simulator, which needs no Docker, but it also declares a localnet target, which does (the localnet and node commands, and 'hardkas doctor node', need it)`
+                : `${notReachable}; not needed by this workspace: its default target is the simulator, which needs no Docker (the localnet and node commands, and 'hardkas doctor node', need it)`,
+              ...(simulatorDefault.declaresLocalnet
+                ? { suggestion: timedOut ? "Docker is not answering: restart Docker before using the localnet target." : "Start Docker before using the localnet target." }
+                : {})
             }
           : {
             name: "Docker daemon",
             category: "docker",
             code: "DOCKER_UNREACHABLE",
             status: "fail",
-            message: "Not reachable",
-            suggestion: "Ensure Docker is running."
+            message: notReachable,
+            suggestion: timedOut ? "Docker is not answering: restart Docker." : "Ensure Docker is running."
           }
     );
   }

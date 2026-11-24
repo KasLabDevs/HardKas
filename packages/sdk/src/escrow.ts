@@ -12,7 +12,7 @@ import {
   type EscrowCompileProvenance,
   type EscrowConfig,
   type EscrowState
-} from "@hardkas/escrow";
+} from "./escrow-core/index.js";
 import {
   HardkasError,
   HardkasSchemas,

@@ -1,5 +1,6 @@
 ---
-title: SilverScript and covenants on your simnet
+title: "Kaspa SilverScript contracts and covenants on a local simnet"
+sidebar_label: "SilverScript and covenants on your simnet"
 description: Compile a SilverScript contract with the pinned silverc, deploy and spend it, then create a Toccata covenant and advance it, on your own simnet node.
 ---
 
@@ -16,7 +17,9 @@ confirm):
 
 Everything here is real-node evidence about your simnet node only. Mainnet is
 refused (`SILVERSCRIPT_MAINNET_NOT_ENABLED`); testnet-10 is not evidenced for
-these commands.
+these commands. The model behind each step (compile records, covenant ids,
+transaction v1 and compute budgets) is in the
+[SilverScript and Toccata covenants guide](../guides/silverscript-covenants/index.md).
 
 ## 0. Install the compiler and check readiness
 
@@ -193,9 +196,11 @@ record: .hardkas\artifacts\silver\silverCovenant-24884056f65331c1.json
 Genesis is a transaction v1. The covenant id is the one the SDK derives; with
 `--wait` the record also keeps the id the node reports (`covenantIdFromNode`),
 and in the test run both were the same. `--compute-budget 10` covers the
-funding input's signature check, and the fee is explicit (HardKAS does not price
-v1 compute budgets): these are the values the corpus run proved on a real node.
-With 10 KAS locked, a 0.01 KAS fee clears the node's minimum.
+funding input's signature check, and `--fee 1000000` (0.01 KAS) clears the
+node's minimum: these are the values the corpus run proved on a real node. Both
+are optional (the compute budget defaults to the certified P2PK budget, the fee
+to the node's floor; see
+[transaction v1 and the compute budget](../guides/silverscript-covenants/tx-v1-and-compute-budget.md)).
 
 ### Advance it (transition 7 → 12)
 
@@ -262,9 +267,11 @@ workspace did not record is seen only by its effect.
 ## What is not covered
 
 - **Covenant shapes other than 1:1** (1:N fan-out, N:M, termination) and
-  KCC-20 tokens are experimental and not covered by this guide: they are built by
-  the SDK's v1 engine (`hardkas.covenants`, `hardkas silver engine`) and, from the
-  CLI, by `silver covenant start|advance` and `kcc20 deploy|transfer|balance`;
+  KCC-20 tokens are experimental and not covered by this walkthrough: they are
+  built by the SDK's v1 engine (`sdk.covenants`, `hardkas silver engine`) and,
+  from the CLI, by `silver covenant start|advance`
+  ([covenant genesis and transition](../guides/silverscript-covenants/covenant-genesis-and-transition.md#3-several-outputs-and-other-shapes-experimental))
+  and `kcc20 deploy|transfer|balance` ([KCC-20](../reference/kcc.md));
   proven on a real simnet node by the repository's node suites
   ([Covenants status](../status/covenants-status.md)).
 - **What a policy computes** (a `require`, conservation of amounts): HardKAS
@@ -281,5 +288,8 @@ workspace did not record is seen only by its effect.
 
 ## Next
 
+- [SilverScript and Toccata covenants](../guides/silverscript-covenants/index.md): the guide to the model and every command
+- [Testing Kaspa Covenants with HardKAS](../guides/testing-kaspa-covenants.md)
+- [ZK L1 proof verification and Toccata script building](../guides/zk-l1-verification-and-settlement.md)
 - [Reading receipts and verification levels](./receipts-and-levels.md)
 - [What works in this release](./what-works.md)

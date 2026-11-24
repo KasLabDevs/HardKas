@@ -1,3 +1,5 @@
+import { SDK_WEBSOCKET_MAX_PAYLOAD_BYTES } from "./upstream/node-websocket-compat.js";
+
 export class RpcError extends Error {
   constructor(
     message: string,
@@ -73,6 +75,43 @@ export class RpcConnectionError extends RpcError {
     super(message, code ?? "RPC_CONNECTION_FAILED", undefined, true);
     this.name = "RpcConnectionError";
   }
+}
+
+/**
+ * RPC-RESPONSE-TOO-LARGE-1 (diagnosed 21-oct-2026, LFU): the node's answer to one request was larger than the largest
+ * message HardKAS reads (SDK_WEBSOCKET_MAX_PAYLOAD_BYTES, 100 MiB), so the socket refused it at its header and dropped
+ * the connection (WebSocket close 1009) without reading it. kaspa-wasm reports that as "WebSocket disconnected", which
+ * reached the CLI as a codeless, retriable error (UNKNOWN_ERROR). In practice it is getUtxosByAddresses for an address
+ * holding more than about 277,000 UTXOs (~378 bytes each in the node's JSON). The node is fine, and the same request
+ * gets the same answer: never retried. A broadcast that ends this way has an unknown outcome (classifySubmitFailure).
+ */
+export class RpcResponseTooLargeError extends RpcError {
+  readonly method: string;
+  readonly maxPayloadBytes: number;
+  /** What to do instead (the CLI prints it after the message). */
+  readonly suggestion: string;
+  constructor(opts: { method: string; endpoint: string; maxPayloadBytes?: number }) {
+    const max = opts.maxPayloadBytes ?? SDK_WEBSOCKET_MAX_PAYLOAD_BYTES;
+    const size = max % (1024 * 1024) === 0 ? `${max / (1024 * 1024)} MiB` : `${max} bytes`;
+    const remedy = "Use another address (one with fewer UTXOs), or wait for paginated UTXO reads (rusty-kaspa's getUtxosByAddressesV2, in no release yet).";
+    super(
+      `RPC_RESPONSE_TOO_LARGE: the answer of the node at ${opts.endpoint} to ${opts.method} is larger than ${size}, the most HardKAS reads ` +
+        `in one RPC message (for one address's UTXOs: about 277,000 of them), so it was refused unread. The node is fine and nothing ` +
+        `changed on it; asking again gets the same answer, so HardKAS does not retry. ${remedy}`,
+      "RPC_RESPONSE_TOO_LARGE",
+      { method: opts.method, endpoint: opts.endpoint, maxPayloadBytes: max },
+      false
+    );
+    this.name = "RpcResponseTooLargeError";
+    this.method = opts.method;
+    this.maxPayloadBytes = max;
+    this.suggestion = remedy;
+  }
+}
+
+/** RPC-RESPONSE-TOO-LARGE-1: an RpcResponseTooLargeError, or any error carrying its code (one that crossed a wrapper). */
+export function isRpcResponseTooLargeError(error: unknown): boolean {
+  return error instanceof RpcResponseTooLargeError || (error as { code?: unknown } | null | undefined)?.code === "RPC_RESPONSE_TOO_LARGE";
 }
 
 /**
@@ -218,7 +257,14 @@ export function acceptedTxIdOf(answer: unknown, expectedTxId: string | undefined
  */
 export function classifySubmitFailure(e: unknown, txId: string | undefined): unknown {
   if (isRpcRequestNotSentError(e) || isNodeNetworkIdentityError(e) || e instanceof RpcSubmitOutcomeUnknownError) return e;
-  if (e instanceof RpcTimeoutError || e instanceof RpcConnectionError || e instanceof RpcUnavailableError || !(e instanceof RpcError)) {
+  // RPC-RESPONSE-TOO-LARGE-1: an answer refused unread says nothing about what the node did with the request
+  if (
+    e instanceof RpcTimeoutError ||
+    e instanceof RpcConnectionError ||
+    e instanceof RpcUnavailableError ||
+    e instanceof RpcResponseTooLargeError ||
+    !(e instanceof RpcError)
+  ) {
     return new RpcSubmitOutcomeUnknownError({ txId, cause: e });
   }
   return e; // the node answered (normalizeRpcError): its own text decides (accepted / rejected / already held)

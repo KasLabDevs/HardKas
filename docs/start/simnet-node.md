@@ -1,6 +1,7 @@
 ---
-title: Run your own simnet node
-description: Run rusty-kaspad v2.1.0 by digest and a CPU miner in Docker, wait for coinbase maturity, point your workspace at it, and stop it without losing data.
+title: "Run a local Kaspa simnet node (rusty-kaspad in Docker)"
+sidebar_label: "Run your own simnet node"
+description: Run rusty-kaspad v2.1.0 and a CPU miner in Docker, by hand or as the managed localnet, point your workspace at it, stop it, or start over.
 url: /localnet
 ---
 
@@ -13,6 +14,9 @@ sends against it like against any node.
 
 It is part of [Build on your own simnet](./build-on-simnet.md). You need Docker
 and an initialized workspace ([Install HardKAS](./installation.md#initialize-the-workspace)).
+If you would rather let HardKAS run the node for you (fixed names and ports, one
+per machine), see [The managed localnet](#the-managed-localnet) at the end of
+this page.
 
 > [!IMPORTANT]
 > A simnet node is its own chain. What it accepts is evidence about that node
@@ -129,7 +133,7 @@ localnet's (`ws://127.0.0.1:18210`). Open `hardkas.config.ts` and change that
       kind: "kaspa-node",
       network: "simnet",
       rpcUrl: "ws://127.0.0.1:26510", // was ws://127.0.0.1:18210
-      description: "Local Docker kaspad on simnet — requires hardkas node start"
+      description: "Local Docker kaspad on simnet — requires hardkas localnet start --toccata"
     }
 ```
 
@@ -209,12 +213,92 @@ transactions the new one never had: `artifact verify` reports them
 docker rm my-simnet-miner my-simnet
 ```
 
-## The managed localnet, for comparison
+## The managed localnet
 
-`hardkas localnet start --profile toccata-v2` runs a node and miner that HardKAS
-manages itself (fixed container names and ports, one per machine) and proves by
-container and image digest. This page uses a node of your own instead: your
-names, your ports, your data folder, and the same pinned image.
+`hardkas localnet start --toccata` (the same as `--profile toccata-v2`; one of
+the two is required, otherwise `LOCALNET_PROFILE_REQUIRED`) runs a node and a
+miner that HardKAS manages itself (alpha). It uses the same pinned images as
+above, with fixed container names (`hardkas-kaspad-toccata-v2` and
+`hardkas-toccata-miner`) and fixed ports on `127.0.0.1`: gRPC 16210, Borsh wRPC
+17210 and JSON wRPC 18210, the endpoint `init` declares for `simnet`. HardKAS
+proves the node by its container and image digest. The chain lives in the
+workspace that started the node, in `.hardkas/kaspad`.
+
+There is one managed localnet per machine. `localnet start` in a second
+workspace adopts the running node, whose chain stays in the first workspace's
+folder. If something HardKAS does not manage already answers on 18210, the start
+is refused (`LOCALNET_PORT_CONFLICT`). The rest of this page uses a node of your
+own instead: your names, your ports, your data folder, and the same pinned image.
+
+### A first payment on the managed localnet
+
+These commands reach the node through the `simnet` endpoint `init` writes
+(`ws://127.0.0.1:18210`); if you pointed it at a node of your own
+([step 4](#4-point-the-workspace-at-the-node)), set it back first. The keystore
+password is read from `HARDKAS_PASSWORD`, set as in
+[Quickstart, step 1](./quickstart-simnet.md#1-create-two-accounts).
+
+```bash
+npx hardkas localnet start --toccata
+npx hardkas localnet status
+npx hardkas accounts real generate --name miner --network simnet --password-env HARDKAS_PASSWORD
+npx hardkas accounts real generate --name ana --network simnet --password-env HARDKAS_PASSWORD
+npx hardkas localnet fund miner
+npx hardkas tx plan --from miner --to ana --amount 10 --network simnet --out plan.json
+npx hardkas tx sign plan.json --account miner --password-env HARDKAS_PASSWORD --out signed.json
+npx hardkas tx send signed.json --network simnet --yes --wait
+npx hardkas tx status <txId>
+npx hardkas accounts balance ana --network simnet
+```
+
+- `localnet start` also creates the dev accounts `alice` … `erin` in
+  `.hardkas/dev-accounts/`. Their keys come from a fixed seed, the same in every
+  workspace, so they are for simnet only.
+- `localnet fund` mines until the account's spendable (mature) balance has grown
+  by `--amount` (default 1000 KAS), within `--timeout` (default 300000 ms).
+  Afterwards a miner keeps running, paying its rewards to an address nobody can
+  spend, so new blocks keep arriving and transactions confirm. `--keep-miner`
+  keeps mining to the funded account instead; `--stop-miner` leaves the chain
+  stopped.
+- `tx send --wait` waits until the transaction is `CONFIRMED` (60 seconds by
+  default, `--wait-timeout`). Not reaching it in time is `TX_SEND_WAIT_FAILED`:
+  the transaction was still submitted.
+- The send records a `TxSubmission`. `replay verify` refuses it
+  (`REPLAY_MODE_UNSUPPORTED`): replay exists for simulated receipts only. Check a
+  node send with `artifact verify --network simnet` and `tx status`
+  ([Reading receipts and verification levels](./receipts-and-levels.md)).
+
+### Stop, or start over from an empty chain
+
+```bash
+npx hardkas localnet stop
+npx hardkas localnet reset
+```
+
+`localnet stop` stops the node and its miner, and reports success only once
+Docker shows each one down. The chain stays in `.hardkas/kaspad`, and
+`localnet start --toccata` resumes it.
+
+`localnet reset` starts the localnet over from an empty chain (alpha). It stops
+the node and its miner, each verified down, then removes only this workspace's
+chain data, `.hardkas/kaspad`. It keeps the dev accounts and their keys, and
+the workspace's artifacts and records; those that name the old chain's
+transactions then describe a chain that no longer exists (`artifact verify`
+reports them `NOT_OBSERVED`). Run `localnet start --toccata` afterwards for a
+fresh chain.
+
+- It asks before it removes anything. `--yes` confirms without asking, and
+  `--json` needs `--yes` (`INTERACTIVE_PROMPT_IN_JSON_MODE` otherwise).
+- It runs only inside a workspace (`WORKSPACE_NOT_FOUND` otherwise).
+- Before anything is stopped or removed, it refuses a running node whose chain
+  data belongs to another workspace (`LOCALNET_RESET_OTHER_WORKSPACE`: reset it
+  from that workspace, or run `localnet stop` first to reset only this
+  workspace's data), and a running node whose data folder Docker does not name
+  (`LOCALNET_RESET_DATA_UNVERIFIED`: run `localnet stop` first).
+- It takes the workspace lock; `--wait-lock` waits for it, up to
+  `--lock-timeout <ms>` (default 30000).
+
+`localnet reset` replaces the hidden, deprecated `hardkas node reset`.
 
 ### Funding dev accounts from the localnet treasury (alpha)
 

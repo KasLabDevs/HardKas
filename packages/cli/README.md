@@ -1,5 +1,7 @@
 # `@hardkas/cli`
 
+Documentation: [hardkas.dev/docs](https://hardkas.dev/docs/) · Website: [hardkas.dev](https://hardkas.dev)
+
 The HardKAS command line: create a Kaspa project, plan a transaction, sign it, send it, follow its state and verify the evidence of every step — on a local simulator or against a real `rusty-kaspad` node in Docker.
 
 > **Release scope.** This release supports the Golden Core shown on this page, on the simulator and on a local node you control. It is not qualified for testnet-10 or mainnet. Other commands listed by `hardkas --help` are experimental.
@@ -10,8 +12,8 @@ Requirements: Node.js 24.22.1 exactly (`engines` pins it; `hardkas doctor` warns
 
 ```bash
 mkdir my-kaspa-app && cd my-kaspa-app
-npx @hardkas/cli@0.13.0-rc.3 init .
-npm install --save-dev @hardkas/cli@0.13.0-rc.3
+npx @hardkas/cli@1.0.0 init .
+npm install --save-dev @hardkas/cli@1.0.0
 ```
 
 `init` writes a `package.json` (an ES module project, with `@hardkas/sdk` and `@hardkas/testing` pinned to this CLI's version), `hardkas.config.ts`, a first test in `test/payment.test.ts` and a local simulator whose accounts (`alice`, `bob`, …) start with 1000 KAS each. Installing `@hardkas/cli` in the project makes `npx hardkas` run this CLI.
@@ -45,6 +47,8 @@ npx hardkas why <receipt artifact id printed by tx send>
 
 In the simulator HardKAS executes the payment itself; nothing is broadcast to a network.
 
+Every command that broadcasts a transaction (`tx send`, `tx batch`, `wallet hd send`, `escrow fund`, `escrow release`, `kcc20 deploy`, `kcc20 transfer`, `zk toccata spend`, the Silver on-chain commands and `silver test --on-node`) needs `--yes` on any network other than `simulated` and `simnet`: without it the command is refused before anything is read, signed or sent (exit 3, `TX_SEND_CONFIRMATION_REQUIRED`; `zk toccata spend` keeps its own `ZK_SPEND_CONFIRMATION_REQUIRED`). `accounts consolidate --execute` needs `--yes` on every network. Mainnet is refused whatever `--yes` says.
+
 ### Against a local node
 
 A real `rusty-kaspad` node in Docker, funded by mining. The keys below are development keys stored in plaintext in `.hardkas/`; use them only on this local node.
@@ -53,18 +57,17 @@ A real `rusty-kaspad` node in Docker, funded by mining. The keys below are devel
 npx hardkas localnet start --toccata
 npx hardkas accounts real generate --name miner --unsafe-plaintext --yes
 npx hardkas accounts real generate --name ana --unsafe-plaintext --yes
-npx hardkas localnet fund miner --keep-miner
+npx hardkas localnet fund miner
 npx hardkas tx plan --from miner --to ana --amount 10 --network simnet --out plan.json
 npx hardkas tx sign plan.json --account miner --out signed.json
-npx hardkas tx send signed.json --network simnet --yes
+npx hardkas tx send signed.json --network simnet --yes --wait
 npx hardkas tx status <txId printed by tx send>
-npx hardkas tx wait <txId> --until confirmed
 npx hardkas accounts balance ana --network simnet
 npx hardkas verify signed.json
 npx hardkas localnet stop --toccata
 ```
 
-`localnet fund` mines until the account has spendable coins. With `--keep-miner` the miner keeps running, so new blocks keep arriving and the transaction gets accepted and confirmed; without it the miner stops and the node stays still until you mine again. `localnet stop` stops the node, and the miner, which shares its network, stops with it.
+`localnet fund` mines until the account has spendable coins. By default a miner keeps running (its rewards go to an address nobody can spend, not to the funded account) so new blocks keep arriving and transactions confirm; pass `--keep-miner` to keep mining directly to the funded account, or `--stop-miner` to stop the miner after funding. `localnet stop` stops the node, and the miner, which shares its network, stops with it.
 
 `tx status` and `tx wait` report what the node has been observed to do with the transaction — `SUBMITTED`, `MEMPOOL_ACCEPTED`, `ACCEPTED`, then `CONFIRMED` once it has at least 100 blue-score confirmations. That threshold is a HardKAS default, not a Kaspa parameter. Once the state is reached, `tx wait` also waits, within the same `--timeout`, until the node's UTXO view lists the new outputs and no longer lists the spent inputs, so the balance you read next is current (an output that a later transaction has already spent, such as change used by the next payment of a batch, is not waited for); if the view does not catch up in time it fails with `TX_WAIT_UTXO_VIEW_STALE`.
 

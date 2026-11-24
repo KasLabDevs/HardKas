@@ -1,3 +1,9 @@
+---
+title: "Tutorial: full-stack demo"
+sidebar_label: "Chapter 08: Full Stack Demo"
+description: "The full-stack Kaspa demo that closes the HardKAS builder book, based on Lab 09.5."
+---
+
 # Chapter 08: Full Stack Demo
 
 The culmination of the Builder Book is the Full Stack Demo (based on Lab 09.5).
@@ -8,7 +14,8 @@ It integrates:
 - `IndexerToolkit` for tracking balances and artifacts.
 - `JobsToolkit` for running background reconciliation tasks.
 
-To see it in action, run:
+To scaffold it as a new project in `my-app` (`create` takes the template, then the destination):
 ```bash
-npx hardkas create my-app --template full-stack-demo
+npx hardkas create full-stack-demo my-app
 ```
+To inspect the full showcase apps in this repository, see `labs/showcase-suite/`.

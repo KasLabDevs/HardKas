@@ -1,23 +1,41 @@
+---
+title: "Plugins"
+sidebar_label: "Chapter 7: Plugins"
+description: "Extend HardKAS with plugins that add custom tasks or define hooks that observe or block transactions."
+---
+
 # Chapter 7: Plugins
 
 HardKAS allows extending its capabilities securely through Plugins. A Plugin can add custom Tasks or define Hooks that observe or block transactions.
 
-```bash execute
-hardkas init plugin-project
+Create a project folder, initialize it, and run every command of the chapter from inside it:
+
+```bash
+mkdir plugin-project
 cd plugin-project
 ```
 
-Let's define an inline plugin in `hardkas.config.ts`:
+```bash execute
+hardkas init
+```
+
+The config below imports `@hardkas/config` and `@hardkas/core`. Install them, at the version of your CLI:
+
+```bash
+npm install @hardkas/config@1.0.0 @hardkas/core@1.0.0
+```
+
+Let's define an inline plugin in `hardkas.config.ts` (this replaces the file `init` wrote):
 
 ```bash execute
-cat << 'EOF' > plugin-project/hardkas.config.ts
+cat << 'EOF' > hardkas.config.ts
 import { defineHardkasConfig } from "@hardkas/config";
 import { task, types, HardkasPlugin } from "@hardkas/core";
 
 const myPlugin: HardkasPlugin = {
   name: "MyCustomPlugin",
   version: "1.0.0",
-  hardkasVersion: "0.13.0-rc.3",
+  hardkasVersion: "1.0.0",
   hooks: {
     onBeforeTxSign: async (ctx) => {
       console.log(`Plugin intercepting sign for account: ${ctx.account}`);
@@ -37,9 +55,8 @@ export default defineHardkasConfig({
 EOF
 ```
 
-Run the plugin task seamlessly:
+Run the plugin task you registered in `hardkas.config.ts` above:
 
 ```bash execute
-cd plugin-project
 hardkas task plugin-task --json
 ```

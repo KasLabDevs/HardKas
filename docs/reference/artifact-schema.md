@@ -1,3 +1,8 @@
+---
+title: "Artifact Schema Reference"
+description: "The common header of every HardKAS artifact (schema, version, hash version), the fields of txPlan and signedTx, and the levels of artifact verify."
+---
+
 # Artifact Schema Reference
 
 Every artifact shares a common header:
@@ -5,7 +10,7 @@ Every artifact shares a common header:
 {
   "schema": HardkasSchemas.TxPlan,
   "schemaVersion": HardkasSchemas.ArtifactV1,
-  "hardkasVersion": "0.13.0-rc.3",
+  "hardkasVersion": "1.0.0",
   "hashVersion": 5,
   "createdAt": "2026-06-06T12:00:00Z"
 }
@@ -20,7 +25,7 @@ Every artifact shares a common header:
 - `to.address`: Destination address.
 
 ## `signedTx` Specifics
-- `sourcePlanId`: Hash of the parent `txPlan`.
+- `sourcePlanId`: The parent plan's `planId` (for example `plan-e260046f110236f6`); the plan's hash is `lineage.parentArtifactId`.
 - `signedTransaction.payload`: The raw hex string to be broadcast to the node.
 
 ## Verification levels (`hardkas artifact verify`)

@@ -1,5 +1,7 @@
 # @hardkas/query
 
+Documentation: [hardkas.dev/docs](https://hardkas.dev/docs/) · Website: [hardkas.dev](https://hardkas.dev)
+
 Queries over a workspace's artifacts and its query store: artifacts, lineage, replay, DAG, events and transactions.
 
 Part of [HardKAS](https://github.com/KasLabDevs/HardKas), local-first developer tooling for Kaspa L1.
@@ -20,7 +22,7 @@ npm install @hardkas/query
 
 ## Status
 
-Preview (query-store projections). HardKAS is an alpha: APIs may change between releases. [Versioning](https://github.com/KasLabDevs/HardKas/blob/main/docs/status/versioning.md) says what is stable, preview and experimental.
+Preview (query-store projections). From 1.0 the boundaries listed as stable follow semantic versioning; preview and experimental surfaces may change between minor releases. [Versioning](https://github.com/KasLabDevs/HardKas/blob/main/docs/status/versioning.md) says what is stable, preview and experimental.
 
 ## License
 

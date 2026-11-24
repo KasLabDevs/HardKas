@@ -55,10 +55,9 @@ Do not route high-value transactions through HardKAS.
 HardKAS proves artifact determinism and workflow integrity. It does not execute
 a general smart-contract VM, so L2 and bridge logic depend on their own runtime.
 
-The Silver/Toccata simulator comparison is an **artifact-coherence** check. It may
-report `SILVERSCRIPT_SIMULATION_MATCH` for verified local fixtures, but partial
-VM simulation remains explicit. Full Kaspa VM or consensus equivalence is not
-claimed.
+HardKAS no longer has a Silver simulator: SilverScript verdicts come from the
+local runner (UNVERIFIED) or from a node. Full Kaspa VM or consensus equivalence is
+not claimed.
 
 ### 3. The query store is a projection, not the truth
 
@@ -108,10 +107,13 @@ What exists (all `experimental`, no on-chain claim, mainnet `BLOCKED_BY_POLICY`)
   inspect-only (`RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED`).
 - **Toccata L1 scripts and transactions** (`zk toccata build-scripts`, SDK
   `buildR0Groth16Transaction`): built with the kaspa-wasm 2.1.0 `ZkScriptBuilder`
-  for `OpZkPrecompile` (`0xa6`, Groth16 tag `0x20`); never broadcast, and never
-  built for mainnet (`MAINNET_SIGNING_DISABLED`: a ZK spend needs no signature, so
-  the built transaction would be complete). `zk toccata verify-scripts` accepts a
-  lock only over the pinned RISC Zero verifying key, control root and control id,
+  for `OpZkPrecompile` (`0xa6`, Groth16 tag `0x20`). Building them sends nothing;
+  `zk toccata spend` sends a lock's spend through HardKAS's send (below), and nothing is
+  ever built for mainnet (`MAINNET_SIGNING_DISABLED`: a ZK spend needs no signature, so
+  the built transaction would be complete). `zk toccata verify-scripts` takes the lock
+  as hex (`--redeem-script`, `--sig-script`) or as the record `build-scripts --json`
+  prints (`--scripts <record>`, whose P2SH script and addresses it checks against the
+  redeem script). It accepts a lock only over the pinned RISC Zero verifying key, control root and control id,
   and says `consensusEnforced: true` only for an output-bound lock byte-identical
   to the one HardKAS builds for the outputs it carries (payout, change, one input,
   input limit); any other script is `ZK_REDEEM_SCRIPT_NOT_CANONICAL` and gets no
@@ -148,11 +150,13 @@ Limits that stay:
 - Off-chain (snarkjs) and on-chain (arkworks) verifiers differ in format and in
   validation details; a local VERIFIED does not predict node acceptance. No
   snarkjs Groth16 key is bridged to the precompile.
-- On-chain acceptance is evidenced only by the simnet suites against a
+- On-chain acceptance is evidenced by the simnet suites against a
   harness-raised rusty-kaspad v2.1.0 (`zk-toccata-l1.simnet`,
   `zk-output-bound-l1.simnet`: the SDK's proof-only and bound spends accepted;
-  wrong outputs, two inputs and an oversized input rejected), never on a public
-  network.
+  wrong outputs, two inputs and an oversized input rejected), and by Testnet-10
+  runs on 2026-11-13 with test funds, sent with the RPC client directly (the
+  transaction ids are in `fixtures/toccata-v2/zk/r0-groth16-hardkas/README.md`).
+  Never on mainnet.
 - No proof generation, no trusted-setup provenance, no bridge or trustless exit.
 - `snarkjs` and its curve libraries are GPL-3.0. snarkjs is an optional peer
   dependency of `@hardkas/sdk` and is not installed with it: until it is
@@ -296,8 +300,8 @@ pattern to copy.
 - **Escrow lifecycle.** The SDK's records (`.hardkas/escrows/`) and the dev server's journal are separate stores: an escrow created through one is not seen by the other.
 - **Covenants and KCC-20.** A token's outputs are found through this workspace's records of the covenant (a node cannot be asked by covenant id): a transfer made by another workspace is not seen, only its effect. Balances count only outputs the node lists unspent and whose state commits to their address. Owners `p2pk-schnorr` and `p2pkh-schnorr` sign; `p2pkh-ecdsa`, `p2sh` and `covenant-id` owners are not offered (`KCC20_OWNER_SCHEME_UNSUPPORTED`). Minting beyond the genesis (the reference's PublicMint and TokenSeed programs) is not offered: they are not in the pinned checkout. The reference KCC-20 program carries no silverc covenant declaration, so the SDK gives the v1 engine its covenant shape from KCC-20 and its artifact; the engine checks everything else, and the node is the final judge. The unsigned draft plan of each transfer stays in the workspace next to the final plan.
 - **Address history.** A node keeps no address history: `hardkas history` reads a window of the node's selected chain (by default the last 1000 chain blocks, never before its pruning point) and lists what was accepted in it. Nothing before the window's start, after its end, before the pruning point or still in a mempool is covered, and every result says so. One node answer holds a batch of chain blocks with their transactions at high verbosity: on a busy network it can be large, and the WebSocket limit applies. Proven on simnet only.
-- **Browser wallets.** KasWare, Kastle and Kaspire are driven through the interfaces public field notes describe, tested against faithful fakes; no real extension has been run by HardKAS's tests. Until the owner runs the [probe](../start/browser-wallets.md#check-your-wallet-with-the-probe), what each wallet really returns is unverified. A wallet signs for its own Schnorr P2PK address only; Kastle is offered payments, not contract inputs.
-- **HD wallets.** The scan looks at UTXOs only: an address whose outputs were all spent counts as unused for the gap limit (default 20); the wallet's recorded indices extend the scan over every address it handed out. Phrases are 12 or 24 English words. The BIP39 passphrase is used byte for byte, as rusty-kaspa does: with a non-ASCII passphrase, BIP39 tools that normalise it may derive another wallet. Without the password, `list`, `describe` and `balance` read the public header as written (`verified: false`); watch-only wallets are always unverified. The next-index state is not authenticated, by design. A payment is one v0 transaction from one account. `WalletToolkit` has no HD mode.
+- **Browser wallets.** HardKAS's tests drive KasWare, Kastle and Kaspire through faithful fakes. On 21-nov-2026 the [probe](../start/browser-wallets.md#check-your-wallet-with-the-probe) was run against the real extensions on Testnet-10 (KasWare 0.11.6, Kaspire, Kastle): payments signed through KasWare and Kaspire, messages through all three. Kastle's payment path (its own `signTx(networkId, txJson, scripts)`; Kastle has no `signPskt`) has not been run against the real extension yet. A wallet signs for its own Schnorr P2PK address only. Kastle is offered version-0 payments only: a contract request or a transaction that is not version 0 is refused before Kastle is asked (`WALLET_COVENANT_SIGNING_UNSUPPORTED`), and a Ledger inside Kastle refuses to sign without sending. Kaspire and Kastle are held to their own `getNetwork()` answer when they offer it, re-read before every signature.
+- **HD wallets.** The scan looks at UTXOs only: an address whose outputs were all spent counts as unused for the gap limit (default 20); the wallet's recorded indices extend the scan over every address it handed out. Phrases are 12 or 24 English words. The BIP39 passphrase is used byte for byte, as rusty-kaspa does: with a non-ASCII passphrase, BIP39 tools that normalise it may derive another wallet. `balance` lists every address the wallet's index handed out, receive and change, with a zero balance where it was emptied (each entry of `used` says `handedOut`), plus any funded address the scan finds. Without the password, `list`, `describe` and `balance` read the public header as written (`verified: false`); watch-only wallets are always unverified. The next-index state is not authenticated, by design. A payment is one v0 transaction from one account. `WalletToolkit` has no HD mode.
 
 ### The simulator is an approximate model
 
@@ -386,14 +390,16 @@ The native PSKT bridge comes with no guarantee:
 - `index.d.ts` is empty: a TypeScript consumer that imports the package does not compile;
 - its signer signs with the sighash type the PSKT carries, decides key ownership
   from the PSKT's own derivations and does not review outputs (audit HK-13);
-- `hardkas pskt sign` with the native adapter is reported broken (audit TX-09);
+- the CLI cannot load it: no `hardkas` command registers the native adapter;
 - it is not published (`private: true`), and `@hardkas/sdk` does not depend on it
   (L1-CORE-1 B5).
 
 Rebuilding or fixing it is **BLOCKED** while the package is on hold, pending the
-owner's authorization. Elsewhere `hasNativeBinding` is false, and the SDK's PSKT
-flow uses the kaspa-wasm adapter unless `pskt.registerNativeAdapter()` is called.
-`registerNativeAdapter()` loads `@hardkas/pskt-native` from where the SDK is
+owner's authorization. No PSKT operation works in this build: the SDK's default
+adapter (kaspa-wasm) implements none, the CLI cannot load the native one, and
+`hardkas pskt` is hidden (its export, import, sign, merge, finalize and extract
+refuse). Outside win32-x64 `hasNativeBinding` is false. In the SDK,
+`pskt.registerNativeAdapter()` loads `@hardkas/pskt-native` from where the SDK is
 installed; when it cannot, it returns `false` and the native adapter reports
 `NATIVE_ADDON_NOT_INSTALLED`. Since the SDK no longer declares the package, that is
 also the case inside this repository for code that runs the SDK's `dist` (the
@@ -402,22 +408,14 @@ every gate).
 
 ### Skipped tests that hide known gaps
 
-The canonical gate keeps 11 tests skipped with a `[known gap: …]` label. Each one
-documents a defect that is known and not fixed yet. They are listed here so that
-none of them reads as a silent pass. `node scripts/check-known-gaps.mjs` fails
+The canonical gate keeps no test skipped with a `[known gap: …]` label (the last one, the `localnet fund` race, is
+covered at its own level by `packages/cli/test/localnet-treasury.simnet.test.ts` and `cli-lifecycle.simnet.test.ts`, on a
+real isolated simnet node). A skipped test with that label documents a defect that is known and not fixed yet; each one
+is listed here so that none of them reads as a silent pass. `node scripts/check-known-gaps.mjs` fails
 when a label in a test file is missing from this table.
 
 | Known gap (label text) | Ticket | Test |
 | :-- | :-- | :-- |
-| simulated-account guard not enforced without an RPC URL | simulator demotion | `packages/cli/test/tx-simulated.test.ts`, `packages/cli/test/simulated-isolation.test.ts` |
-| strict verify rejects golden fixtures (PARENT_MISSING, snapshot ARTIFACT_SCHEMA_INVALID) | evidence core | `packages/cli/test/smoke.test.ts` |
-| needs a 'localnet' execution target in hardkas.config.ts | M2-B | `packages/cli/test/localnet-fund-race.test.ts` (whole suite) |
-| fee model diverges from node | M4 upstream mass/fees | `packages/sdk/test/fees.test.ts` (2 tests) |
-| TxPlan with policy refs fails the integrity check | evidence core | `packages/sdk/test/integration.test.ts` (whole suite) |
-| replay verify fails on a signed multisig | evidence core | `packages/sdk/test/multisig-adversarial.test.ts` |
-| Hardkas.open connects to the public RPC before the test can inject one | — | `packages/sdk/test/audit-hardening.test.ts` |
-| query dag reads .hardkas/state.json, the simulator keeps its DAG in .hardkas/localnet.json | L1-CORE-1-B4 (simulator, frozen) | `packages/cli/test/l1-core-1-b4-query.test.ts` |
-| up ignores --json | L1-CORE-1-B4 (needs a design: the dev server's JSON output prints its token) | `packages/cli/test/l1-core-1-b4-up-dev-accounts.test.ts` |
 
 ### Test levels: what the canonical gate does not run
 
@@ -552,6 +550,35 @@ application that needs live events should call `connect()` again after a
 disconnect, or use the watch in `@hardkas/toolkit`, which re-subscribes and
 reports the gap.
 
+### One address's UTXO list: at most about 277,000 UTXOs
+
+HardKAS reads at most 100 MiB in one RPC message (`SDK_WEBSOCKET_MAX_PAYLOAD_BYTES` in
+`@hardkas/kaspa-rpc`). A node lists an address's UTXOs in one answer, about 378 bytes
+each, so an address holding more than about 277,000 UTXOs cannot be read: the answer is
+refused unread and the request fails with `RPC_RESPONSE_TOO_LARGE`, which says the node
+is fine and is never retried. The limit is not raised because, close to it, one read
+already costs about a minute of CPU and over 1 GB of memory in the client, and V8's
+string limit comes next.
+
+- **Fail, typed:** `tx plan`, `tx flow`, `tx batch`, `accounts consolidate`,
+  `rpc utxos`, `sdk.observe.address`, the SDK's `tx.plan`, `utxos.waitForSpendable*`
+  and `tx` waits, and `node.fundDevWallets`. Less likely to meet it, but with the same
+  code: `silver`, `escrow` and `zk toccata spend` on such an address, the toolkit
+  wallet, and `PaymentToolkit.check` (as `PAYMENT_CHECK_NODE_FAILED`). A broadcast that
+  meets it is an unknown outcome, never a rejection.
+- **Degrade and go on:** `accounts balance` reports the node's total and leaves
+  `utxoCount`, `spendableSompi`, `covenantBoundSompi` and `covenantUtxoCount` empty
+  (`null`, with a `note`); `tx wait` lists the address in `utxoView.tooLargeToRead`
+  and takes the state from the chain; `localnet fund` still funds.
+- **How an address gets there locally:** `localnet fund --keep-miner` leaves the miner
+  paying the account, about one UTXO per block; at the default miner throttle it passes
+  the limit after about two hours (the command warns about it).
+- **Upstream:** paginated UTXO reads (`getUtxosByAddressesV2`, rusty-kaspa #991) were
+  merged on 2026-10-15 but are in no rusty-kaspa release (the latest is v2.1.0).
+
+Use another address, consolidate before an address grows that large, or start the
+localnet over (`hardkas localnet reset`).
+
 ### Node on Windows: the SDK uses the `ws` WebSocket
 
 HardKAS talks to the node through the official kaspa-wasm `RpcClient`. That
@@ -561,7 +588,11 @@ connections and then calls `process.exit` aborts
 (`Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)`). We reproduced this
 with the bare SDK, without HardKAS code. So `@hardkas/kaspa-rpc` sets the global
 to the `ws` package's `WebSocket`, as kaspa-wasm's Node instructions do, unless
-something else replaced the global after HardKAS loaded. This is a compatibility
+something else replaced the global after HardKAS loaded. The shim also sets the
+per-connection message limit explicitly to 100 MiB (`SDK_WEBSOCKET_MAX_PAYLOAD_BYTES`;
+kaspa-wasm's own 1 GiB request never applied) and records each answer it refused for
+its size, so the request gets `RPC_RESPONSE_TOO_LARGE` (see the UTXO limit above)
+instead of a bare disconnect. This is a compatibility
 shim, not a HardKAS transport: the SDK still drives the connection. It comes out
 once the upstream combination is fixed (see
 `packages/kaspa-rpc/src/upstream/node-websocket-compat.ts`).

@@ -134,7 +134,7 @@ describe("Audit Hardening Suite (0.13.0-rc.3)", () => {
       });
     });
 
-    it.skip("[known gap: Hardkas.open connects to the public RPC before the test can inject one] should resolve to real mode for testnet/mainnet when allowPublic is true", async () => {
+    it("should resolve to real mode for testnet/mainnet when allowPublic is true", async () => {
       const realSdk = await Hardkas.open({
         cwd: tmpDir,
         network: "testnet-10",
@@ -142,31 +142,39 @@ describe("Audit Hardening Suite (0.13.0-rc.3)", () => {
         autoBootstrap: false
       });
 
+      // valid testnet addresses (the checksum is checked): derived from two fixed keys, nothing is funded or contacted
+      const { loadKaspaWasm } = await import("@hardkas/accounts");
+      const kaspa: any = await loadKaspaWasm();
+      const addrOf = (hex: string) => new kaspa.PrivateKey(hex).toKeypair().toAddress("testnet-10").toString();
+      const fromAddress = addrOf("01".repeat(32));
+      const toAddress = addrOf("02".repeat(32));
+
       // Mock the RPC call to prevent connection error
       realSdk.rpc.getUtxosByAddress = async () => {
         return [
           {
-            outpoint: { transactionId: "mock-tx", index: 0 },
-            address:
-              "kaspatest:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqhx0cg",
+            outpoint: { transactionId: "ab".repeat(32), index: 0 },
+            address: fromAddress,
             amountSompi: 100_000_000n,
-            scriptPublicKey: "mock"
+            scriptPublicKey: kaspa.payToAddressScript(fromAddress).script
           }
         ];
       };
       realSdk.rpc.getBlockDagInfo = async () => ({ virtualDaaScore: 0n }) as any;
+      // planning refuses without current mempool evidence (a pending spend could be selected twice): an empty mempool
+      (realSdk.rpc as any).getMempoolEntriesByAddresses = async () => ({ entries: [] });
 
       // Use explicit testnet addresses to avoid NETWORK_ADDRESS_MISMATCH
       const plan = await realSdk.tx.plan({
         from: {
           name: "alice",
-          address: "kaspatest:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqhx0cg"
+          address: fromAddress
         },
         to: {
           name: "bob",
-          address: "kaspatest:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e"
+          address: toAddress
         },
-        amount: 10n
+        amount: 50_000_000n // 0.5 KAS: below it the Generator refuses (storage mass)
       });
       expect(plan.mode).toBe("rpc");
     });

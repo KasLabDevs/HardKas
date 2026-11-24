@@ -33,7 +33,7 @@ export const DEFAULT_HARDKAS_CONFIG: HardkasConfig = {
       // CANONICAL-RPC-URL: the canonical localnet endpoint from @hardkas/core (a plain constant,
       // safe before kaspa-wasm is installed), never a copy.
       rpcUrl: `ws://${CANONICAL_LOCALNET.host}:${CANONICAL_LOCALNET.ports.jsonRpc}`,
-      description: "Local Docker kaspad on simnet — requires hardkas node start"
+      description: "Local Docker kaspad on simnet — requires hardkas localnet start --toccata"
     },
     devnet: {
       kind: "kaspa-node",

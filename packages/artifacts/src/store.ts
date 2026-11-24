@@ -142,6 +142,15 @@ export class ProjectArtifactStore {
       }
     }
     const { rel, content } = storeEntryFor(artifact);
+    if (typeof artifact?.contentHash === "string" && artifact.contentHash.length > 0) {
+      const persistedHash = calculateContentHash(JSON.parse(content), declaredVersion);
+      if (persistedHash !== artifact.contentHash) {
+        throw storeError(
+          "ARTIFACT_SERIALIZATION_HASH_MISMATCH",
+          `Refusing to store ${String(artifact.schema ?? "artifact")}: serialized JSON hashes to ${persistedHash} under hashVersion ${declaredVersion} instead of declared ${artifact.contentHash} (serialize bigint values as strings before hashing)`
+        );
+      }
+    }
     const targetPath = path.join(this.artifactsDir, rel);
     const identity =
       typeof artifact?.contentHash === "string" && artifact.contentHash.length > 0 ? (artifact.contentHash as string) : undefined;

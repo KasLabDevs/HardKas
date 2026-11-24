@@ -1,6 +1,11 @@
+---
+title: "Why HardKAS is Designed This Way"
+description: "Why HardKAS splits every Kaspa transaction into steps (plan, sign, send, observe, verify) and writes each one to a file you can check later."
+---
+
 # Why HardKAS is Designed This Way
 
-HardKAS breaks away from the traditional, monolithic approach to cryptocurrency wallet architecture. This document explains _why_ the transaction lifecycle is heavily segmented and relies on file-system artifacts.
+HardKAS splits every Kaspa transaction into steps — plan, sign, send, observe, verify — and writes each step to a file you can check later. This page explains _why_ the transaction lifecycle is segmented and relies on file-system artifacts.
 
 ## The Standard Approach vs HardKAS
 

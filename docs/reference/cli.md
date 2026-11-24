@@ -1135,6 +1135,7 @@ No arguments.
 - [hardkas dev fixture](#hardkas-dev-fixture)
 - [hardkas dev init](#hardkas-dev-init)
 - [hardkas dev last](#hardkas-dev-last)
+- [hardkas dev recover-lock](#hardkas-dev-recover-lock)
 - [hardkas dev tx](#hardkas-dev-tx)
 
 ---
@@ -1339,6 +1340,29 @@ hardkas dev last [options]
 | `--replay` | Show the latest receipt, or verify the latest plan or signed transaction (no replay is run) | false |
 | `--explain` | Print the `hardkas why` command for the latest artifact | false |
 | `--workspace <path>` | Override workspace root directory |  |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas dev recover-lock
+
+Archive a STALE dev-server send-guard lock (its process no longer runs; kept as evidence as send-guard.v1.lock.stale-<pid>-<time>) so one dev server can send again. Stop every dev server on the workspace first. Refused when the lock is missing or unreadable, names another pid, or its process is alive; the send-guard log is untouched
+
+### Usage
+
+```bash
+hardkas dev recover-lock [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--pid <pid>` | The process id the lock names (the SEND_GUARD_LOCK_STALE refusal says it) |  |
+| `--json` | Output as JSON | false |
 
 ### Arguments
 
@@ -1584,6 +1608,7 @@ hardkas escrow fund [options] <id>
 | `--timeout <seconds>` | With --wait: how long to wait | 120 |
 | `--password-env <env>` | Read the keystore password of the encrypted account this command signs with from this environment variable (development accounts need none) |  |
 | `--password-stdin` | Read the keystore password of the encrypted account this command signs with from stdin | false |
+| `--yes` | Confirm the broadcast. Required unless the network is simulated or simnet: without it the funding is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -1668,6 +1693,7 @@ hardkas escrow release [options] <id>
 | `--url <url>` | Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). The canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced) |  |
 | `--wait` | Wait until a chain block accepts the release (RELEASED) | false |
 | `--timeout <seconds>` | With --wait: how long to wait | 120 |
+| `--yes` | Confirm the broadcast. Required unless the network is simulated or simnet: without it the release is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -1721,6 +1747,7 @@ hardkas escrow rescue-v1 broadcast [options] <draft-file>
 | :--- | :--- | :--- |
 | `--network <network>` | Network (default: the draft's); must be the draft's |  |
 | `--url <url>` | Node wRPC (JSON) endpoint (default: the one the workspace declares for the draft's network; simnet: the canonical localnet) |  |
+| `--yes` | Confirm the broadcast. Required unless the network is simulated or simnet: without it the rescue is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -2639,6 +2666,7 @@ hardkas kcc20 deploy [options] <record>
 | `--timeout <seconds>` | Confirmation timeout | 120 |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
 | `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
+| `--yes` | Confirm the broadcast. Required unless the network is simulated or simnet: without it the deploy is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -2691,7 +2719,7 @@ hardkas kcc20 transfer [options]
 | `--from <account>` | The holder whose token outputs are spent and who signs them (local key); the change in tokens goes back to it |  |
 | `--to <spec>` | A recipient, in output order (repeatable): '<owner>=<amount>', the owner an account of this workspace, a P2PK address or a 32-byte x-only public key (hex) |  |
 | `--input <outpoint>` | Spend this token output 'txid:index' (repeatable, the leader first); default: --from's live outputs, largest first, as few as cover the amounts |  |
-| `--funder <account>` | Pay the fee from this account's coins (local key); default: the tokens' KAS (the first new output keeps what the fee leaves) |  |
+| `--funder <account>` | Pay the fee from this account's coins (local key). Default: the sender's side pays, never a recipient's output: --from's token change output keeps what the fee leaves; without token change, --from's own KAS coins pay it; when neither can, the transfer is refused before anything is signed (KCC20_FEE_SOURCE_REQUIRED: name a funder) |  |
 | `--artifact <file>` | The program's KCC-20 artifact (kcc20.json); default: KCC-20's default configuration |  |
 | `--fee <sompi>` | Fee in sompi: at least the node's floor for this transaction (the floor when omitted) |  |
 | `--max-fee <sompi>` | The plan's fee limit (default: the fee it pays) |  |
@@ -2702,6 +2730,7 @@ hardkas kcc20 transfer [options]
 | `--timeout <seconds>` | Confirmation timeout | 120 |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
 | `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
+| `--yes` | Confirm the broadcast. Required unless the network is simulated or simnet: without it the transfer is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -2733,6 +2762,7 @@ No arguments.
 - [hardkas localnet account](#hardkas-localnet-account)
 - [hardkas localnet fork](#hardkas-localnet-fork)
 - [hardkas localnet fund](#hardkas-localnet-fund)
+- [hardkas localnet reset](#hardkas-localnet-reset)
 - [hardkas localnet seed](#hardkas-localnet-seed)
 - [hardkas localnet snapshot](#hardkas-localnet-snapshot)
 - [hardkas localnet start](#hardkas-localnet-start)
@@ -2842,6 +2872,31 @@ hardkas localnet fund [options] <identifier>
 | Argument | Description |
 | :--- | :--- |
 | `identifier` |  |
+
+---
+
+## hardkas localnet reset
+
+Start the localnet over from an empty chain: stop the Docker toccata-v2 node and its miner and remove this workspace's chain data (.hardkas/kaspad); a running node whose chain is another workspace's is refused; dev accounts, keys and records are kept; needs Docker alpha
+
+### Usage
+
+```bash
+hardkas localnet reset [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--yes` | Confirm the removal of this workspace's chain data (required with --json) | false |
+| `--wait-lock` | Wait for workspace lock if held | false |
+| `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
 
 ---
 
@@ -3163,181 +3218,6 @@ No options.
 
 ---
 
-## hardkas node
-
-Kaspa node management (Docker)
-
-### Usage
-
-```bash
-hardkas node [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas node logs](#hardkas-node-logs)
-- [hardkas node reset](#hardkas-node-reset)
-- [hardkas node restart](#hardkas-node-restart)
-- [hardkas node start](#hardkas-node-start)
-- [hardkas node status](#hardkas-node-status)
-- [hardkas node stop](#hardkas-node-stop)
-
----
-
-## hardkas node logs
-
-View node logs preview
-
-### Usage
-
-```bash
-hardkas node logs [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--tail <n>` | Number of lines to show | 100 |
-| `--follow` | No effect: the logs are printed once (the last --tail lines), never followed | false |
-| `--json` | Output results as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas node reset
-
-Stop node and remove all local chain data preview
-
-### Usage
-
-```bash
-hardkas node reset [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--start` | Restart the node after reset | false |
-| `--yes` | Skip confirmation prompt | false |
-| `--wait-lock` | Wait for workspace lock if held | false |
-| `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
-| `--json` | Output results as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas node restart
-
-Restart local node stable
-
-### Usage
-
-```bash
-hardkas node restart [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--wait-lock` | Wait for workspace lock if held | false |
-| `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
-| `--json` | Output results as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas node start
-
-Start local node stable
-
-### Usage
-
-```bash
-hardkas node start [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--image <image>` | Docker image, pinned by digest: <repository>[:tag]@sha256:<64 hex> (default: the pinned rusty-kaspad); an image without a digest is refused (NODE_IMAGE_DIGEST_REQUIRED) |  |
-| `--allow-floating-image` | No effect: the image must be pinned by digest (@sha256:<64 hex>); a floating tag is never run | false |
-| `--wait-lock` | Wait for workspace lock if held | false |
-| `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
-| `--json` | Output results as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas node status
-
-Check node status
-
-### Usage
-
-```bash
-hardkas node status [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Return status in JSON format | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas node stop
-
-Stop local node stable
-
-### Usage
-
-```bash
-hardkas node stop [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--wait-lock` | Wait for workspace lock if held | false |
-| `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
-| `--json` | Output results as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
 ## hardkas programmability
 
 Experimental local programmability tools: inspection and fixture checks of Silver, ZK and vProgs artifacts; no vProgs runtime, no on-chain ZK verification (Outputs JSON by default)
@@ -3557,272 +3437,6 @@ hardkas programmability verify [options] <path>
 
 ---
 
-## hardkas pskt
-
-Portable Signing Sessions (PSKT): unavailable in this build. No adapter implements PSKT operations, so export, import, sign, merge, finalize and extract refuse
-
-### Usage
-
-```bash
-hardkas pskt [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas pskt capabilities](#hardkas-pskt-capabilities)
-- [hardkas pskt export](#hardkas-pskt-export)
-- [hardkas pskt extract](#hardkas-pskt-extract)
-- [hardkas pskt finalize](#hardkas-pskt-finalize)
-- [hardkas pskt import](#hardkas-pskt-import)
-- [hardkas pskt inspect](#hardkas-pskt-inspect)
-- [hardkas pskt merge](#hardkas-pskt-merge)
-- [hardkas pskt sign](#hardkas-pskt-sign)
-- [hardkas pskt verify](#hardkas-pskt-verify)
-
----
-
-## hardkas pskt capabilities
-
-Show PSKT adapter capabilities alpha
-
-### Usage
-
-```bash
-hardkas pskt capabilities [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--adapter <adapterId>` | Specific adapter ID to query (default: kaspa-wasm-local) |  |
-| `--json` | Output results as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas pskt export
-
-Export a TxPlan as a Portable Signing Session unavailable
-
-### Usage
-
-```bash
-hardkas pskt export [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--plan <planPath>` | Path to the TxPlan JSON artifact |  |
-| `--out <sessionPath>` | Path to write the new PSKT session JSON |  |
-| `--adapter <adapterId>` | Specific adapter ID to bind to (default: kaspa-wasm-local) |  |
-| `--force` | Overwrite the output file if it exists | false |
-| `--json` | Output results as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas pskt extract
-
-Extract KaspaRpcTransaction from a finalized PSKT session unavailable
-
-### Usage
-
-```bash
-hardkas pskt extract [options] <sessionPath>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--out <outputPath>` | Path to write the Kaspa transaction JSON |  |
-| `--force` | Overwrite the output file if it exists | false |
-| `--json` | Output results as JSON | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `sessionPath` |  |
-
----
-
-## hardkas pskt finalize
-
-Finalize a PSKT session unavailable
-
-### Usage
-
-```bash
-hardkas pskt finalize [options] <sessionPath>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--out <outputPath>` | Path to write the finalized PSKT session JSON |  |
-| `--force` | Overwrite the output file if it exists | false |
-| `--json` | Output results as JSON | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `sessionPath` |  |
-
----
-
-## hardkas pskt import
-
-Import a raw payload into a PSKT session unavailable
-
-### Usage
-
-```bash
-hardkas pskt import [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--file <sessionPath>` | Path to the PSKT session JSON |  |
-| `--payload <payloadPath>` | Path to the raw payload file |  |
-| `--out <outputPath>` | Path to write the updated PSKT session JSON |  |
-| `--force` | Overwrite the output file if it exists | false |
-| `--json` | Output results as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas pskt inspect
-
-Show a PSKT session file's metadata. It does not decode the payload: no inputs, outputs, amounts or recipients, so it is no pre-signing check alpha
-
-### Usage
-
-```bash
-hardkas pskt inspect [options] <sessionPath>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output results as JSON | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `sessionPath` |  |
-
----
-
-## hardkas pskt merge
-
-Merge two PSKT sessions unavailable
-
-### Usage
-
-```bash
-hardkas pskt merge [options] <sessionA> <sessionB>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--out <outputPath>` | Path to write the merged PSKT session JSON |  |
-| `--force` | Overwrite the output file if it exists | false |
-| `--json` | Output results as JSON | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `sessionA` |  |
-| `sessionB` |  |
-
----
-
-## hardkas pskt sign
-
-Sign a PSKT session payload unavailable
-
-### Usage
-
-```bash
-hardkas pskt sign [options] <sessionPath>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--account <name>` | Name of the HardKAS L1 account to sign with |  |
-| `--keystore <path>` | Path to a HardKAS keystore JSON file |  |
-| `--key-stdin` | Read private key from standard input |  |
-| `--private-key-file <path>` | Path to file containing raw private key (TEST ONLY) |  |
-| `--inputs <indexes>` | Comma-separated input indexes to sign (default: the inputs this participant is eligible for) |  |
-| `--network <name>` | The network you sign for (default: the workspace's); it must be the session's, and its node must list every input to sign as unspent |  |
-| `--out <outputPath>` | Path to write the updated PSKT session JSON |  |
-| `--force` | Overwrite the output file if it exists | false |
-| `--json` | Output results as JSON | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `sessionPath` |  |
-
----
-
-## hardkas pskt verify
-
-Verify integrity and lineage of a PSKT session alpha
-
-### Usage
-
-```bash
-hardkas pskt verify [options] <sessionPath>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output results as JSON | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `sessionPath` |  |
-
----
-
 ## hardkas query
 
 Query and introspect HardKAS artifacts, lineage, and workflows
@@ -3963,7 +3577,7 @@ No arguments.
 
 ## hardkas query dag
 
-Query a light-model DAG (NOT GHOSTDAG) read from .hardkas/state.json, which no HardKAS command writes; without it each query fails with DAG_DATA_UNAVAILABLE (exit 1) instead of answering without data research
+Query the simulated ledger's light-model DAG (NOT GHOSTDAG) read from .hardkas/localnet.json, else .hardkas/state.json; without a DAG each query fails with DAG_DATA_UNAVAILABLE (exit 1) instead of answering without data research
 
 ### Usage
 
@@ -5036,11 +4650,9 @@ No arguments.
 - [hardkas silver audit](#hardkas-silver-audit)
 - [hardkas silver compile](#hardkas-silver-compile)
 - [hardkas silver covenant](#hardkas-silver-covenant)
-- [hardkas silver debug](#hardkas-silver-debug)
 - [hardkas silver deploy](#hardkas-silver-deploy)
 - [hardkas silver doctor](#hardkas-silver-doctor)
 - [hardkas silver engine](#hardkas-silver-engine)
-- [hardkas silver fuzz](#hardkas-silver-fuzz)
 - [hardkas silver inspect](#hardkas-silver-inspect)
 - [hardkas silver preflight](#hardkas-silver-preflight)
 - [hardkas silver spend](#hardkas-silver-spend)
@@ -5166,6 +4778,7 @@ hardkas silver covenant advance [options] <record>
 | `--timeout <seconds>` | Confirmation timeout | 120 |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
 | `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
+| `--yes` | Confirm the broadcast. Required unless the network is simulated or simnet: without it the transition is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -5202,6 +4815,7 @@ hardkas silver covenant genesis [options] <record>
 | `--timeout <seconds>` | Confirmation timeout | 120 |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
 | `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
+| `--yes` | Confirm the broadcast. Required unless the network is simulated or simnet: without it the genesis is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -5265,6 +4879,7 @@ hardkas silver covenant start [options] <record>
 | `--timeout <seconds>` | Confirmation timeout | 120 |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
 | `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
+| `--yes` | Confirm the broadcast. Required unless the network is simulated or simnet: without it the covenant's creation is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -5305,6 +4920,7 @@ hardkas silver covenant transition [options] <covenant-record>
 | `--timeout <seconds>` | Confirmation timeout | 120 |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
 | `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
+| `--yes` | Confirm the broadcast. Required unless the network is simulated or simnet: without it the transition is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -5312,40 +4928,6 @@ hardkas silver covenant transition [options] <covenant-record>
 | Argument | Description |
 | :--- | :--- |
 | `covenant-record` |  |
-
----
-
-## hardkas silver debug
-
-Execute a covenant transition on the SilverScript runner (cli-debugger: a local build, no official binary exists) after the structural v1 validation, and emit source-mapped step traces, variable state and three verdicts (structural, SCRIPT_VM, global). Exit codes: 0 APPROVED (or any rejection with --allow-failure); 1 rejected (SILVER_DEBUG_STRUCTURAL_REJECTED, SILVER_DEBUG_CONTRACT_REJECTED) or a runner that gave no verdict (SILVER_RUNNER_NOT_FOUND, _START_FAILED, _TIMEOUT, _PROTOCOL_ERROR or _INTERNAL_ERROR); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record
-
-### Usage
-
-```bash
-hardkas silver debug [options] <source-or-record>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--entry <name>` | Covenant policy or entrypoint name (e.g. bump) |  |
-| `--constructor-args <file>` | Constructor arguments JSON file |  |
-| `--args <json-or-file>` | Entry arguments JSON array or file path |  |
-| `--state <json-or-file>` | Current covenant state JSON object or file path |  |
-| `--next-state <json-or-file>` | Successor covenant state JSON object or file path |  |
-| `--demo-fixture` | Allow generated laboratory fixture parameters and synthetic UTXO when explicit transaction arguments are omitted | false |
-| `--fee <sompi>` | Fee in sompi (default: 300000) |  |
-| `--compute-budget <n>` | Compute budget or 'estimate' (default: estimate) |  |
-| `--allow-failure` | Return exit code 0 when the transition is rejected (structural validation or SCRIPT_VM), for interactive inspection; the verdicts are unchanged | false |
-| `--allow-unverified-runner` | Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official | false |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `source-or-record` |  |
 
 ---
 
@@ -5373,6 +4955,7 @@ hardkas silver deploy [options] <record>
 | `--timeout <seconds>` | Confirmation timeout | 120 |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
 | `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
+| `--yes` | Confirm the broadcast. Required unless the network is simulated or simnet: without it the deploy is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -5621,36 +5204,6 @@ hardkas silver engine sign [options] <plan>
 
 ---
 
-## hardkas silver fuzz
-
-Run bidirectional property-based fuzzing over a counter covenant transition: SCRIPT_VM checks the counter rule (accepted iff delta > 0 and next = previous + delta) on the SilverScript runner; SYNTHETIC checks the structural compute-budget bounds. Exit codes: 0 FUZZ PASS; 1 counterexample (SILVER_FUZZ_FAILED), too few samples of one direction (SILVER_FUZZ_INSUFFICIENT_COVERAGE), a sample without a VM verdict (SILVER_FUZZ_NO_VM_EVIDENCE), a testbed error (SILVER_FUZZ_EVALUATION_ERROR), a runner that gave no verdict (SILVER_RUNNER_NOT_FOUND, _START_FAILED, _TIMEOUT, _PROTOCOL_ERROR or _INTERNAL_ERROR) or one that changed during the run (SILVER_RUNNER_CHANGED); 2 usage (SILVER_OPTION_INVALID, SILVER_FUZZ_SHAPE_UNSUPPORTED); 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record
-
-### Usage
-
-```bash
-hardkas silver fuzz [options] <source-or-record>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--entry <name>` | Covenant entrypoint name: it must take (State, int delta, sig) over a state of one int field | bump |
-| `--constructor-args <file>` | Constructor arguments JSON file |  |
-| `--runs <n>` | Generated samples (1-10000), run after the boundary samples that every run includes | 10 |
-| `--seed <n>` | Deterministic RNG seed (32-bit integer) | 20261029 |
-| `--backend <backend>` | SCRIPT_VM: the counter rule on the SilverScript runner; SYNTHETIC: the structural compute-budget bounds (no contract logic is judged without the VM) | SCRIPT_VM |
-| `--allow-unverified-runner` | Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official | false |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `source-or-record` |  |
-
----
-
 ## hardkas silver inspect
 
 Show a SilverScript v1 compile record
@@ -5739,6 +5292,7 @@ hardkas silver spend [options] <deploy-record>
 | `--timeout <seconds>` | Confirmation timeout | 120 |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
 | `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
+| `--yes` | Confirm the broadcast. Required unless the network is simulated or simnet: without it the spend is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -5771,8 +5325,9 @@ hardkas silver test [options] <record>
 | `--on-node` | Judge every case on a Kaspa node instead of the SilverScript runner: each case HardKAS can reproduce gets its own coin of the case's utxo_value at the contract's P2SH (paid from --from), then the real spend the case describes (entry, arguments, signatures of the named accounts, outputs, sequence, lock time; transaction v0, or v1 through the SDK's engine when the case's tx.version is 1 or absent), sent through HardKAS's send machinery. The node's answer is the verdict (CONSENSUS_SIMNET on simnet), next to the expected one; a case no real transaction reproduces is reported NOT_REPRODUCIBLE, never a pass. Needs a workspace that runs the network as a kaspa-l1 node | false |
 | `--network <network>` | With --on-node: the network (default: the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config |  |
 | `--url <url>` | With --on-node: the node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet) |  |
-| `--from <account>` | With --on-node: the account that funds one coin per reproducible case at the contract's P2SH (local key) |  |
+| `--from <account>` | With --on-node: the account that funds one coin per reproducible case at the contract's P2SH, all in ONE funding transaction (one output per case; local key) |  |
 | `--timeout <seconds>` | With --on-node: seconds to wait for each funding coin, each relative lock and each accepted spend to show in the node's UTXO index (default 120) |  |
+| `--yes` | With --on-node: confirm the broadcasts (the funding and each case's spend). Required unless the network is simnet: without it the run is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written |  |
 | `--out <file>` | Record path (default .hardkas/artifacts/silver-vm/; with --on-node .hardkas/artifacts/silver/) |  |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
 | `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
@@ -6328,6 +5883,7 @@ hardkas tx batch [options]
 | `--workspace <path>` | Override workspace root directory |  |
 | `--password-env <env>` | Read the keystore password of the batch's encrypted payers from this environment variable (read once, before the first payment) |  |
 | `--password-stdin` | Read the keystore password of the batch's encrypted payers from stdin (read once, before the first payment) | false |
+| `--yes` | Confirm the broadcast. Required unless the network is simulated or simnet: without it the batch (every payment of it) is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -6378,7 +5934,7 @@ hardkas tx plan [options] [from] [to]
 | `--to <address>` | Recipient address or account name (default: bob). Repeat it as --to <recipient>=<kas> (no --amount) to pay several recipients in one transaction: one output each, in the order given, one change output and one fee |  |
 | `--amount <kas>` | Amount in KAS, up to 8 decimals (default: 1) |  |
 | `--network <name>` | simulated, simnet, devnet, testnet-10, testnet-12 or mainnet (default: the config's default target) |  |
-| `--fee-rate <sompiPerMass>` | Whole sompi per gram of mass, at least 1 (default: 1 in the simulator, 100 on real networks; not a live estimate) |  |
+| `--fee-rate <sompiPerMass>` | Whole sompi per gram of mass, at least 1 (default: 1 in the simulator, live node getFeeEstimate on real networks bounded by maxFeeRate) |  |
 | `--max-fee <sompi>` | Total fee limit in sompi: the plan is refused (FEE_EXCEEDS_MAX) above it, and the limit is recorded in the plan and enforced again at sign and send. The workspace's networks[<net>].maxFeeSompi also applies; the lower one wins. No limit by default |  |
 | `--change <accountOrAddress>` | Change destination (account name or address); default: the sender |  |
 | `--lock-time-daa <n>` | Absolute lock time as a DAA score (below 500000000000): the transaction is valid only once the node's virtual DAA score is above it; `tx send` refuses to broadcast it earlier (LOCK_TIME_NOT_REACHED, nothing sent). Not with --lock-time-ms; not on the simulator |  |
@@ -6480,7 +6036,7 @@ hardkas tx send [options] [signedPath]
 | `--url <url>` | RPC URL (optional override) |  |
 | `--wait` | After the node accepts the send, wait until the transaction is CONFIRMED, as `hardkas tx wait <txId>`, on the same node (--url, else the network's configured one). Not reaching it in time is TX_SEND_WAIT_FAILED (exit 1): the transaction was still submitted | false |
 | `--wait-timeout <seconds>` | With --wait: how long to wait, in seconds or with a unit (500ms, 60s, 2m) (default: 60) |  |
-| `--yes` | Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3) and nothing is written | false |
+| `--yes` | Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is written | false |
 | `--wait-lock` | No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s) | false |
 | `--lock-timeout <ms>` | No effect, kept for compatibility (see --wait-lock) | 30000 |
 | `--json` | Output as JSON | false |
@@ -6630,7 +6186,7 @@ hardkas up [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--json` | No effect: up prints human output only | false |
+| `--json` | Print one JSON document (the dev server: status, url, token) instead of human output | false |
 
 ### Arguments
 
@@ -6867,7 +6423,7 @@ hardkas wallet hd address [options] <wallet>
 
 ## hardkas wallet hd balance
 
-Scan the wallet's receive and change addresses on the node (gap limit) and show what they hold. Mainnet is refused: MAINNET_CONNECTION_DISABLED experimental
+Scan the wallet's receive and change addresses on the node (gap limit) and show what they hold: every address the wallet's index handed out (zero where emptied) and any funded one past it. Mainnet is refused: MAINNET_CONNECTION_DISABLED experimental
 
 ### Usage
 
@@ -7055,7 +6611,7 @@ hardkas wallet hd reveal [options] <wallet>
 
 ## hardkas wallet hd send
 
-Pay from the wallet: one plan over the UTXOs of all its addresses (the payment planner), change to its next unused change address, each input signed with its own address's key, sent through the same send path as 'tx send' (synced node, one submission per txId, records). Mainnet is refused: MAINNET_BROADCAST_DISABLED, before the password is read experimental
+Pay from the wallet: one plan over the UTXOs of all its addresses (the payment planner), change to its next unused change address, each input signed with its own address's key, sent through the same send path as 'tx send' (synced node, one submission per txId, records). Mainnet is refused: MAINNET_BROADCAST_DISABLED, before the password is read; off simnet it needs --yes, as 'tx send' experimental
 
 ### Usage
 
@@ -7075,6 +6631,7 @@ hardkas wallet hd send [options] <wallet>
 | `--gap-limit <n>` | Consecutive unused addresses per chain before the scan stops (default 20) |  |
 | `--account <n>` | Account index (default 0) |  |
 | `--preflight` | Check every input and signature against the node right before the broadcast (as 'tx send --preflight') | false |
+| `--yes` | Confirm the broadcast. Required unless the network is simulated or simnet: without it the payment is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written | false |
 | `--password-env <env>` | Read the wallet password from this environment variable |  |
 | `--password-stdin` | Read the wallet password from stdin | false |
 | `--passphrase-env <env>` | Read the wallet's BIP39 passphrase (the optional "25th word") from this environment variable; never stored |  |
@@ -7629,7 +7186,7 @@ No arguments.
 
 ## hardkas zk toccata verify-scripts
 
-Verify Toccata P2SH scripts: the pinned RISC Zero verifying key, control root and control id, and a redeem script byte-identical to the one HardKAS builds for the parameters it carries; consensusEnforced only for such an output-bound lock (payout, change, one input, input limit), never from the presence of opcodes
+Verify Toccata P2SH scripts: the pinned RISC Zero verifying key, control root and control id, and a redeem script byte-identical to the one HardKAS builds for the parameters it carries; consensusEnforced only for such an output-bound lock (payout, change, one input, input limit), never from the presence of opcodes. The scripts come from a lock's record (--scripts, as 'spend' takes it) or as hex (--redeem-script and --sig-script)
 
 ### Usage
 
@@ -7641,8 +7198,9 @@ hardkas zk toccata verify-scripts [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--redeem-script <hex>` | Redeem script hex |  |
-| `--sig-script <hex>` | Signature script hex |  |
+| `--scripts <file>` | The lock's record: the JSON 'zk toccata build-scripts --json' printed (as 'spend --scripts' takes it). Its scripts are verified against what the record claims (image id, journal hash, binding mode, bound outputs) and any --image-id / --journal-hash / --expected-* given; its P2SH script and addresses must be its redeem script's. Not with --redeem-script / --sig-script |  |
+| `--redeem-script <hex>` | Redeem script hex (with --sig-script; not with --scripts) |  |
+| `--sig-script <hex>` | Signature script hex (with --redeem-script; not with --scripts) |  |
 | `--image-id <hex>` | Expected 32-byte hex Image ID |  |
 | `--journal-hash <hex>` | Expected 32-byte hex Journal Hash |  |
 | `--expected-mode <mode>` | Expected binding mode ('proof-only' or 'proof-and-output-bound') |  |

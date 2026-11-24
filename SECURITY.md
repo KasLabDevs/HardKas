@@ -43,6 +43,6 @@ Out of scope:
 - vulnerabilities in Kaspa itself (rusty-kaspa, kaspa-wasm), in Node.js or in third-party npm packages: report them to those projects. How HardKAS uses them is in scope;
 - accounts stored in plaintext on purpose (`--unsafe-plaintext`, `localnet account create`) and the development accounts of a local node: they are unprotected by design and meant for local development only;
 - private keys in this repository's test fixtures and test vectors: they are public on purpose;
-- attacks that need a machine that is already compromised, or a malicious package installed in your project (see the [threat model](docs/status/threat-model.md)).
+- attacks that need a machine that is already compromised, or a malicious package installed in your project (see the [security claims](docs/status/security-claims.md)).
 
 What HardKAS protects and what it does not: [security model](docs/concepts/security-model.md) and [security claims](docs/status/security-claims.md).

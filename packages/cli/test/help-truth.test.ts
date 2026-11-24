@@ -39,7 +39,6 @@ describe("--help says what the CLI does", () => {
       ["chaos", "--profile"],
       ["test", "--watch"],
       ["node logs", "--follow"],
-      ["up", "--json"],
       ["tx plan", "--wait-lock"],
       ["tx sign", "--lock-timeout"],
       ["tx send", "--wait-lock"],
@@ -118,5 +117,44 @@ describe("--help says what the CLI does", () => {
       expect(c.description(), p).toMatch(/experimental/);
       expect(c.description(), p).not.toMatch(/\bstable\b/);
     }
+  });
+
+  it("BETA-FIX W2 · every broadcasting command's --yes says it is tx send's confirmation; verify-scripts takes a record; kcc20 transfer never charges a recipient", () => {
+    const broadcasters = [
+      "tx batch",
+      "wallet hd send",
+      "escrow fund",
+      "escrow release",
+      "escrow rescue-v1 broadcast",
+      "kcc20 deploy",
+      "kcc20 transfer",
+      "silver deploy",
+      "silver spend",
+      "silver covenant genesis",
+      "silver covenant transition",
+      "silver covenant start",
+      "silver covenant advance"
+    ];
+    for (const path of broadcasters) {
+      expect(option(path, "--yes").description, path).toMatch(/^Confirm the broadcast\. Required unless the network is simulated or simnet: .*NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED/);
+    }
+    expect(option("tx send", "--yes").description).toMatch(/TX_SEND_CONFIRMATION_REQUIRED/);
+    expect(option("silver test", "--yes").description).toMatch(/^With --on-node: confirm the broadcasts.*Required unless the network is simnet.*TX_SEND_CONFIRMATION_REQUIRED/);
+    expect(option("zk toccata verify-scripts", "--scripts").description).toMatch(/build-scripts --json.*as 'spend --scripts' takes it.*Not with --redeem-script/);
+    expect(option("zk toccata verify-scripts", "--redeem-script").mandatory).toBe(false);
+    expect(option("zk toccata verify-scripts", "--redeem-script").description).toMatch(/not with --scripts/);
+    expect(option("kcc20 transfer", "--funder").description).toMatch(/never a recipient's output.*token change.*own KAS coins.*KCC20_FEE_SOURCE_REQUIRED/);
+    expect(command("wallet hd balance").description()).toMatch(/every address the wallet's index handed out \(zero where emptied\)/);
+  });
+
+  it("BETA-FIX W1 · `dev recover-lock` says it archives a STALE lock (evidence kept), what it refuses, and takes a required --pid", () => {
+    expect(command("dev recover-lock").description()).toMatch(/Archive a STALE dev-server send-guard lock.*kept as evidence.*Refused when the lock is missing or unreadable, names another pid, or its process is alive/);
+    expect(option("dev recover-lock", "--pid").mandatory).toBe(true);
+    expect(option("dev recover-lock", "--json").description).toBe("Output as JSON");
+  });
+
+  it("BETA-FIX · `localnet reset` says what it stops, what it removes (this workspace's .hardkas/kaspad only), what it refuses and what it keeps", () => {
+    expect(command("localnet reset").description()).toMatch(/stop the Docker toccata-v2 node and its miner and remove this workspace's chain data \(\.hardkas\/kaspad\); a running node whose chain is another workspace's is refused; dev accounts, keys and records are kept/);
+    expect(option("localnet reset", "--yes").description).toMatch(/required with --json/);
   });
 });

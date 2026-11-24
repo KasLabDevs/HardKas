@@ -1,47 +1,42 @@
+---
+title: "Artifacts and evidence"
+sidebar_label: "Chapter 4: Artifacts and Evidence"
+description: "How HardKAS packages the deterministic outputs of a scenario into verifiable evidence packages (.hke.json)."
+---
+
 # Chapter 4: Artifacts and Evidence
 
 HardKAS goes beyond simple test execution by packaging the deterministic outputs of a scenario into verifiable evidence packages (`.hke.json`).
 
-```bash execute
-hardkas init evidence-project
+Create a project folder, initialize it, and run every command of the chapter from inside it:
+
+```bash
+mkdir evidence-project
 cd evidence-project
 ```
 
-Let's write a scenario that generates an artifact:
-
 ```bash execute
-cat << 'EOF' > evidence-project/tests/evidence.test.ts
-import { describe, it } from "vitest";
-import { Hardkas } from "@hardkas/sdk";
-
-describe("Evidence Scenario", () => {
-  it("should generate evidence", async () => {
-    const hk = await Hardkas.open(".", { mode: "script", network: "simulated" });
-    await hk.artifacts.write({
-      type: "TaskResult",
-      scenarioName: "Evidence Scenario",
-      status: "PASSED",
-      networkId: hk.network,
-      mode: "script",
-      artifactsGenerated: [],
-      metadata: {},
-      payload: { value: 42 }
-    }, { fileName: "task-results/task1.json" });
-  });
-});
-EOF
+hardkas init
 ```
 
-Run the tests with the `--evidence` flag to automatically bundle the outputs:
+Install the dependencies the generated `package.json` declares (Vitest and `@hardkas/testing` among them):
+
+```bash
+npm install
+```
+
+`init` already wrote a scenario that generates artifacts: `test/payment.test.ts`, named `payment flow`. It funds `alice` on the simulated ledger, then plans, signs and sends 10 KAS to `bob`; the artifacts it writes are listed in its scenario result.
+
+Run the tests with the `--evidence` flag to bundle each scenario's result and artifacts into a package named after the scenario:
 
 ```bash execute
-cd evidence-project
 hardkas test --evidence
 ```
 
 Once the test completes and generates an evidence package, you can verify it:
 
 ```bash execute
-cd evidence-project
 hardkas evidence verify payment_flow.hke.json
 ```
+
+The package is evidence of a simulated run: no node and no consensus were involved.

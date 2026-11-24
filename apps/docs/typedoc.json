@@ -5,7 +5,7 @@
     "../../packages/tx-builder/src/index.ts",
     "../../packages/config/src/index.ts"
   ],
-  "out": "docs/reference/sdk/generated",
+  "out": "reference/sdk/generated",
   "plugin": ["typedoc-plugin-markdown"],
   "sanitizeComments": true,
   "skipErrorChecking": true, "hideGenerator": true,

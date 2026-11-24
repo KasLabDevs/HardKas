@@ -1,6 +1,11 @@
-# HardKAS 0.13.0-rc.3 Programmability Builder Surface
+---
+title: "Programmability surface"
+description: "The SilverScript, ZK corpus, RISC0 and vProgs inspection surfaces HardKAS exposes to app builders through the CLI and SDK, and their status names."
+---
 
-HardKAS 0.13.0-rc.3 exposes a local-first programmability surface for app builders:
+# HardKAS 1.0.0 Programmability Builder Surface
+
+HardKAS 1.0.0 exposes a local-first programmability surface for app builders:
 
 - SilverScript v1 lifecycle: `SILVERSCRIPT_V1_LIFECYCLE` (official silverc v1.0.0 and the Kaspa SDK,
   orchestrated by `hardkas silver`; per-capability evidence in `fixtures/toccata-v2/silver`, see
@@ -37,4 +42,4 @@ Claims remain bounded:
 - `vmConsensusEquivalence = NOT_CLAIMED`
 - `mainnet = BLOCKED_BY_POLICY`
 
-HardKAS 0.13.0-rc.3 does not claim on-chain ZK verification, full vProgs runtime, bridge behavior, trustless exits, testnet readiness, mainnet readiness, or Kaspa VM/consensus equivalence.
+HardKAS 1.0.0 does not claim on-chain ZK verification, full vProgs runtime, bridge behavior, trustless exits, testnet readiness, mainnet readiness, or Kaspa VM/consensus equivalence.

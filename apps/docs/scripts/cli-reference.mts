@@ -1,11 +1,13 @@
-// INT9 · D4: the CLI pages of apps/docs (docs/reference/cli/*.md) and their inventory (docs-data/cli-command-inventory.json)
+// INT9 · D4: the CLI pages of apps/docs (reference/cli/*.md) and their inventory (docs-data/cli-command-inventory.json)
 // come from the Commander tree of packages/cli/src, as docs/reference/cli.md does (pnpm docs:generate-cli). This one
 // script both writes them and checks them, so no gate can pass while they drift:
 //   pnpm docs:generate-apps-cli   (tsx apps/docs/scripts/cli-reference.mts --write)
 //   pnpm docs:check-apps-cli      (tsx apps/docs/scripts/cli-reference.mts --check)
 // It replaces apps/docs/scripts/extract-cli.ts + build-cli-reference.ts and packages/cli/scripts/extract-cli.ts, which
-// were run by hand and nothing checked. The output format is theirs, unchanged. Every .md file of docs/reference/cli is
+// were run by hand and nothing checked. The output format is theirs, unchanged. Every .md file of reference/cli is
 // generated: one the tree no longer produces is stale (removed by --write, reported by --check).
+// BETA-FIX W4: the pages moved from apps/docs/docs/reference/cli to apps/docs/reference/cli (their own docs instance,
+// served at /docs/reference/cli/ as before); apps/docs holds no hand-written page any more.
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -13,7 +15,7 @@ import type { Command } from "commander";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, "../../..");
-const DOCS_DIR = path.resolve(here, "../docs/reference/cli");
+const DOCS_DIR = path.resolve(here, "../reference/cli");
 const INVENTORY = path.resolve(here, "../docs-data/cli-command-inventory.json");
 
 interface InventoryEntry {
@@ -67,6 +69,38 @@ function sanitizeMdx(str: string | undefined): string {
   return str.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\{/g, "&#123;").replace(/\}/g, "&#125;");
 }
 
+/** A YAML double-quoted scalar (JSON's escapes are valid YAML). */
+function yamlString(s: string): string {
+  return JSON.stringify(s);
+}
+
+/**
+ * SEO-2026-11-21: the meta description of a command group's page. It names the group's commands, as many as fit in
+ * the 160 characters search engines show (scripts/check-site-map.mjs uses the same limit).
+ */
+function isSingleCommand(group: string, commands: InventoryEntry[]): boolean {
+  return commands.length === 1 && commands[0]!.commandPath === `hardkas ${group}`;
+}
+
+function groupDescription(group: string, commands: InventoryEntry[]): string {
+  if (isSingleCommand(group, commands)) return `Reference for the hardkas ${group} command, with its arguments, options and defaults.`;
+  const names = [...new Set(commands.map((c) => c.commandPath.split(" ").slice(2).join(" ") || group))];
+  const head = `Reference for the hardkas ${group} commands`;
+  const tail = ", with their arguments, options and defaults.";
+  let list = "";
+  for (const [i, name] of names.entries()) {
+    const more = names.length - i - 1;
+    const next = list ? `${list}, ${name}` : name;
+    const suffix = more > 0 ? `, and ${more} more` : "";
+    if (`${head} (${next}${suffix})${tail}`.length > 160) {
+      list = list ? `${list}, and ${names.length - i} more` : "";
+      break;
+    }
+    list = next;
+  }
+  return list ? `${head} (${list})${tail}` : `${head}${tail}`;
+}
+
 /** file name (in docs/reference/cli) -> content. */
 export function renderCliReference(inventory: InventoryEntry[], cliSemantics: Semantics): Map<string, string> {
   const files = new Map<string, string>();
@@ -81,12 +115,16 @@ export function renderCliReference(inventory: InventoryEntry[], cliSemantics: Se
     "index.md",
     `---
 title: CLI Reference
+description: ${yamlString("Every hardkas command, generated from the CLI's command tree: what it does, its arguments, options and defaults, by command group.")}
 sidebar_position: 1
 ---
 
 # HardKAS CLI Reference
 
-Welcome to the definitive structural and semantic reference for the HardKAS command-line interface.
+These pages are generated from the Commander command tree of \`packages/cli\` by \`pnpm docs:generate-apps-cli\`, and
+\`pnpm docs:check-apps-cli\` fails when one no longer matches it: nothing here is written by hand. Hidden commands
+(internal, unavailable or disabled ones) are not listed. The same reference on one page is
+[docs/reference/cli.md](https://github.com/KasLabDevs/HardKas/blob/develop/docs/reference/cli.md) in the repository.
 
 ## Map of the CLI
 
@@ -106,9 +144,10 @@ Every command page is divided into two distinct boundaries to prevent drift:
 ### Artifact Handles (Identity Contract)
 When a command accepts an artifact identifier (e.g. \`hardkas explain <artifact>\`), you must provide either:
 1. An explicit **filepath** (e.g., \`./.hardkas/artifacts/plans/my-plan.json\`)
-2. The exact canonical **artifactId** (a 64-character hex string)
+2. The exact canonical **artifactId** (a 64-character hex string: an artifact's artifactId is its contentHash)
 
-Do **not** use the network \`txId\` as a generic locator. It will fail.
+A network \`txId\` is not an artifact handle: a bare txId is refused (\`NAMESPACE_REQUIRED\`). Name it with the
+command's own option instead, for example \`hardkas explain --tx <txId>\`.
 
 ### Side Effect Notation
 Commands that mutate your local workspace, broadcast to a network, or expose sensitive material (like private keys) are explicitly marked in the **Side Effects** semantic block. If a command does not have this block, it is considered a read-only operation.
@@ -117,7 +156,9 @@ Commands that mutate your local workspace, broadcast to a network, or expose sen
 
   for (const [group, commands] of Object.entries(groups)) {
     let md = `---
-title: hardkas ${group}
+title: ${yamlString(`hardkas ${group} ${isSingleCommand(group, commands) ? "command" : "commands"}`)}
+sidebar_label: ${yamlString(`hardkas ${group}`)}
+description: ${yamlString(groupDescription(group, commands))}
 ---
 
 # \`hardkas ${group}\`

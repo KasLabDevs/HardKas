@@ -1,5 +1,5 @@
 import { TxPlanArtifact } from "@hardkas/artifacts";
-import { getNetworkPrefix } from "@hardkas/core";
+import { assertMainnetTransactionsDisabled, getNetworkPrefix } from "@hardkas/core";
 
 export interface TxInputAuthorizationContext {
   readonly inputIndex: number;
@@ -37,6 +37,20 @@ export class StaticSignatureScriptAuthorizer implements TxInputAuthorizer {
   }
 }
 
+function assertAuthorizerNetworkAllowed(
+  plan: TxPlanArtifact | undefined,
+  inputIndex: number,
+  caller: string,
+  extra: readonly unknown[] = []
+): void {
+  const planInput = (plan as any)?.inputs?.[inputIndex];
+  assertMainnetTransactionsDisabled(
+    "sign",
+    [(plan as any)?.networkId, (plan as any)?.execution?.network, planInput?.networkId, ...extra],
+    caller
+  );
+}
+
 export class PrivateKeyAuthorizer implements TxInputAuthorizer {
   constructor(
     public readonly accountName: string,
@@ -44,6 +58,7 @@ export class PrivateKeyAuthorizer implements TxInputAuthorizer {
   ) {}
 
   authorize(context: TxInputAuthorizationContext): InputAuthorization {
+    assertAuthorizerNetworkAllowed(context.plan, context.inputIndex, "PrivateKeyAuthorizer");
     const planInput = context.plan.inputs[context.inputIndex];
     if (!planInput) {
       throw new Error(`INVALID_AUTHORIZER_INPUT_INDEX: Input index ${context.inputIndex} does not exist in plan.`);
@@ -53,6 +68,7 @@ export class PrivateKeyAuthorizer implements TxInputAuthorizer {
       kind: "wasm-signer",
       signer: {
         signInput: async (ctx) => {
+          assertAuthorizerNetworkAllowed(ctx.plan ?? context.plan, ctx.inputIndex, "PrivateKeyAuthorizer");
           const { wasm, wasmTransaction, inputIndex } = ctx;
           const privateKey = new wasm.PrivateKey(this.privateKeyHex);
           const networkId = context.plan.networkId || "simnet";
@@ -107,6 +123,7 @@ export class EcdsaPrivateKeyAuthorizer implements TxInputAuthorizer {
   ) {}
 
   authorize(context: TxInputAuthorizationContext): InputAuthorization {
+    assertAuthorizerNetworkAllowed(context.plan, context.inputIndex, "EcdsaPrivateKeyAuthorizer");
     if (!context.plan.inputs[context.inputIndex]) {
       throw new Error(`INVALID_AUTHORIZER_INPUT_INDEX: Input index ${context.inputIndex} does not exist in plan.`);
     }
@@ -115,6 +132,7 @@ export class EcdsaPrivateKeyAuthorizer implements TxInputAuthorizer {
     const signer: EcdsaWasmInputSigner = {
       scheme: "ecdsa",
       signInput: async (ctx) => {
+        assertAuthorizerNetworkAllowed(ctx.plan ?? context.plan, ctx.inputIndex, "EcdsaPrivateKeyAuthorizer");
         const { ecdsaCompressedPublicKey, kaspaSighashInputsFromWasm, signKaspaInputEcdsa } = await import("@hardkas/core");
         const { tx, utxos } = kaspaSighashInputsFromWasm((ctx.wasmTransaction as any).serializeToObject());
         const utxo = utxos[ctx.inputIndex];
@@ -154,11 +172,14 @@ export class LazyAccountAuthorizer implements TxInputAuthorizer {
   ) {}
 
   public async authorize(context: TxInputAuthorizationContext): Promise<InputAuthorization> {
+    assertAuthorizerNetworkAllowed(context.plan, context.inputIndex, "LazyAccountAuthorizer");
     const { resolveHardkasAccount } = await import("./resolve.js");
     const account = await resolveHardkasAccount({
       nameOrAddress: this.accountName,
       config: { cwd: this.workspaceRoot } as any
     });
+
+    assertAuthorizerNetworkAllowed(context.plan, context.inputIndex, "LazyAccountAuthorizer", [(account as any)?.network]);
 
     let pkValue = (account as any).privateKeyEnv ? process.env[(account as any).privateKeyEnv] : undefined;
 

@@ -17,6 +17,8 @@ export async function runRpcUtxos(options: RpcUtxosOptions): Promise<{
   formatted: string;
 }> {
   const url = options.url || nodeRpcUrl();
+  const { assertAddressReadable } = await import("./address-network-guard.js");
+  assertAddressReadable(options.address, options.expectedNetworkId, "rpc utxos");
   const client = new JsonWrpcKaspaClient({ rpcUrl: url, timeoutMs: 10000, expectedNetworkId: options.expectedNetworkId });
   try {
     const utxos = await client.getUtxosByAddress(options.address);

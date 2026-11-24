@@ -5,10 +5,13 @@ import { createRequire } from "node:module";
 import { declaredNetworkIdOf } from "@hardkas/core";
 import { Hardkas, completeWalletPayment, prepareWalletPayment, verifyWalletMessage, type WalletSignRequest } from "@hardkas/sdk";
 import { isMainnetDevServerNetwork } from "./dev-autosign.js";
+import { AMOUNT_SOMPI_RULE, exactSompiOf } from "./sompi.js";
 
 /*
- * R3-C · the wallet probe: a page the owner opens with his real browser wallet (KasWare first; Kastle, Kaspire) to check
- * the field notes' claims on simnet or Testnet-10. LOOPBACK ONLY (a request from any other address is refused, whatever
+ * R3-C · the wallet probe: a page the owner opens with his real browser wallet (KasWare, Kaspire, Kastle) to check what
+ * each one does on simnet or Testnet-10 (run on Testnet-10 on 21-nov-2026 with all three; Kastle's payment path, its
+ * signTx, is new since and waits for the next run). It shows the exact call the session makes (walletSignCallOf).
+ * LOOPBACK ONLY (a request from any other address is refused, whatever
  * the server's host settings). Nothing is sent unless the owner presses the separate send button, which goes through
  * HardKAS's own send route (POST /api/tx/send: send guard, one submission per txId, the records).
  *
@@ -121,12 +124,14 @@ export function createWalletProbeRoutes(options: WalletProbeRoutesOptions = {}) 
     } catch {
       return c.json(errorBody("BAD_REQUEST", "a JSON body { address, to, amountSompi } is required"), 400);
     }
-    if (typeof body?.address !== "string" || typeof body?.to !== "string" || !/^\d+$/.test(String(body?.amountSompi ?? ""))) {
-      return c.json(errorBody("BAD_REQUEST", "address, to and amountSompi (a whole number of sompi) are required"), 400);
+    // BETA-FIX: the amount read exactly (a JSON number past 2^53 - 1 is refused, never rounded)
+    const amountSompi = exactSompiOf(body?.amountSompi);
+    if (typeof body?.address !== "string" || typeof body?.to !== "string" || amountSompi === undefined) {
+      return c.json(errorBody("BAD_REQUEST", `address and to are required; ${AMOUNT_SOMPI_RULE}`), 400);
     }
     try {
       const data = await withSdk(async (sdk) => {
-        const { plan, request } = await prepareWalletPayment(sdk, { address: body.address, to: body.to, amount: BigInt(body.amountSompi) });
+        const { plan, request } = await prepareWalletPayment(sdk, { address: body.address, to: body.to, amount: amountSompi });
         pending.set(request.txId, { plan, request });
         while (pending.size > MAX_PENDING) pending.delete(pending.keys().next().value as string);
         return {
@@ -244,6 +249,8 @@ const PROBE_PAGE = String.raw`<!doctype html>
 <fieldset><legend>Wallet events</legend><pre id="events"></pre></fieldset>
 <script type="module">
 import { connectBrowserWallet, describeBrowserWallet, detectBrowserWallets, walletNetworkIdOf } from "/wallet-probe/sdk/client.js";
+// read by name: an older SDK build without walletSignCallOf still loads the page
+import * as sdkClient from "/wallet-probe/sdk/client.js";
 const $ = (id) => document.getElementById(id);
 const show = (id, v) => ($(id).textContent = typeof v === "string" ? v : JSON.stringify(v, null, 2));
 const tokenBox = $("token");
@@ -291,8 +298,11 @@ $("sign").onclick = async () => {
   const r = await api("POST", "/api/wallet-probe/payment", { address: session.address, to: $("to").value.trim(), amountSompi: $("amount").value.trim() });
   if (!r.ok) return show("request", { refused: r.error.code, message: r.error.message });
   planned = r.data;
-  const signPsktArgument = { txJsonString: planned.request.txJsonString, options: { signInputs: planned.request.signInputs } };
-  show("request", { plan: planned.plan, signPsktArgument });
+  // the call the session makes: KasWare and Kaspire signPskt with one object, Kastle signTx(networkId, txJson, scripts)
+  const walletCall = typeof sdkClient.walletSignCallOf === "function"
+    ? sdkClient.walletSignCallOf(session.kind, planned.request, session.address)
+    : { method: "signPskt", args: [{ txJsonString: planned.request.txJsonString, options: { signInputs: planned.request.signInputs } }] };
+  show("request", { plan: planned.plan, walletCall: { wallet: session.kind, method: walletCall.method, args: walletCall.args } });
   let signed;
   try {
     signed = await session.signTransaction(planned.request);

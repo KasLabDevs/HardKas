@@ -85,8 +85,24 @@ jobs:
       - name: Canonical gate
         run: pnpm test
 
+      # AUDIT 2026-11-21 (A5): the hermetic e2e suites (built CLI, simulator, no node) ran in no workflow. The one that
+      # manages a node (node-programmatic) stays in docker-suites.yml, which gives it a disposable engine.
+      - name: Hermetic e2e (built CLI, no node)
+        if: runner.os == 'Linux'
+        run: >-
+          pnpm vitest run --config vitest.e2e.config.ts --no-file-parallelism
+          packages/cli/test/artifact-create.e2e.test.ts
+          packages/cli/test/dev-fixture.e2e.test.ts
+          packages/cli/test/dev-tx-generate.e2e.test.ts
+          packages/cli/test/localnet-account.e2e.test.ts
+          packages/cli/test/simulator-account.e2e.test.ts
+          packages/cli/test/tx-batch.e2e.test.ts
+          packages/cli/test/workflow-create.e2e.test.ts
+
   # INT9 · D5: the release and docs gates, which ran only by hand: the published set and the version freeze, the CLI
-  # references (docs/reference/cli.* and the apps/docs pages) against the command tree, the generated claims, the docs
+  # references (docs/reference/cli.* and the site's generated apps/docs/reference/cli pages) against the command tree,
+  # the generated claims, the docs (the `pnpm build` above also builds the docs site, which renders docs/ and fails on a
+  # broken link), the SDK examples of the docs, the docs
   # links and versions, the site map, the known-gap skips, the forbidden claims and the dependency licenses of the
   # published packages (offline, from the lockfile). One step per gate, so a red one names itself.
   docs-gates:
@@ -115,13 +131,18 @@ jobs:
       - name: Build Monorepo
         run: pnpm build
 
+      # BETA-FIX W4: every SDK example of the docs (README.md, docs/, the package READMEs) is type-checked against the
+      # packages' built declarations, so it needs the build above. A failure names the Markdown file and line.
+      - name: SDK examples compile (docs:check-examples)
+        run: pnpm docs:check-examples
+
       - name: Published set and version freeze (version:check)
         run: pnpm version:check
 
       - name: CLI reference (docs:check-cli)
         run: pnpm docs:check-cli
 
-      - name: apps/docs CLI pages (docs:check-apps-cli)
+      - name: Site CLI pages (docs:check-apps-cli)
         run: pnpm docs:check-apps-cli
 
       - name: Generated claims (docs:check-claims)

@@ -1,6 +1,8 @@
 {
   "name": "@hardkas/sdk",
-  "version": "0.13.0-rc.3",
+  "version": "1.0.0",
+  "description": "TypeScript SDK for Kaspa L1 apps and tests: plan, sign, send and verify transactions on a simulated ledger or a simnet node, built on the official kaspa-wasm.",
+  "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "sdk", "typescript", "silverscript", "covenants", "toccata", "kaspa-wasm", "wallet", "simnet"],
   "type": "module",
   "files": [
     "dist",
@@ -35,13 +37,11 @@
     "@hardkas/artifacts": "workspace:*",
     "@hardkas/config": "workspace:*",
     "@hardkas/core": "workspace:*",
-    "@hardkas/escrow": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/localnet": "workspace:*",
     "@hardkas/node-runner": "workspace:*",
     "@hardkas/query": "workspace:*",
     "@hardkas/query-store": "workspace:*",
-    "@hardkas/simulator": "workspace:*",
     "@hardkas/toolkit": "workspace:*",
     "@hardkas/tx-builder": "workspace:*"
   },
@@ -71,7 +71,7 @@
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/sdk#readme",
+  "homepage": "https://hardkas.dev/docs/",
   "publishConfig": {
     "access": "public"
   }

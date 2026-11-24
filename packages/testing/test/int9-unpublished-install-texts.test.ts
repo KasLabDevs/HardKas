@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 // the "Not published" table of docs/status/versioning.md (@hardkas/ext-l2, @hardkas/l2, @hardkas/pskt-native, …), and
 // `hardkas extension install l2` installs @hardkas/ext-l2 from the registry. A text may still name such a command when it
 // says, within three lines, that the package is not published. Scanned: the docs people read (root and docs/ Markdown,
-// apps/docs pages, the landing page), package READMEs, the sources of the packages (CLI help and messages, SDK errors)
+// the generated apps/docs reference, the landing page), package READMEs, the sources of the packages (CLI help and messages, SDK errors)
 // and the templates. CHANGELOG.md is history and docs/internal is local-only; both are left out. The READMEs of the
 // unpublished packages themselves document how they install once published: instead of the three-line rule, each
 // must open its install story with a "Not published in this release." notice. That is the L2 pair and, since the
@@ -15,10 +15,7 @@ import { fileURLToPath } from "node:url";
 const UNPUBLISHED_OWN = [
   "l2",
   "ext-l2",
-  "client",
-  "react",
   "wallet-adapter",
-  "simulator-adapters",
   "plugin-local-indexer",
   "plugin-rpc-backend",
   "sync-daemon",
@@ -56,7 +53,8 @@ function scannedFiles(): string[] {
   const out = new Set<string>();
   for (const f of readdirSync(ROOT)) if (f.endsWith(".md") && f !== "CHANGELOG.md" && statSync(path.join(ROOT, f)).isFile()) out.add(path.join(ROOT, f));
   for (const f of walk(path.join(ROOT, "docs"))) if (f.endsWith(".md")) out.add(f);
-  for (const f of walk(path.join(ROOT, "apps", "docs", "docs"))) out.add(f);
+  // BETA-FIX W4: apps/docs holds only the generated references now (the hand-written pages are docs/, walked above).
+  for (const f of walk(path.join(ROOT, "apps", "docs", "reference"))) out.add(f);
   out.add(path.join(ROOT, "apps", "docs", "static", "llms.txt"));
   out.add(path.join(ROOT, "site", "index.html"));
   for (const pkg of readdirSync(path.join(ROOT, "packages"))) {

@@ -1,6 +1,6 @@
 import path from "node:path";
 import { HardkasCliError, HardkasExitCode } from "@hardkas/cli/extension-kit";
-import type { ManagedProcessStatus, TcpListenerReader } from "@hardkas/node-orchestrator";
+import type { ManagedProcessStatus, TcpListenerReader } from "@hardkas/node-runner";
 import { ANVIL_CHAIN_ID, anvilStateDir, isHardkasAnvilArgs, verifiedFoundry } from "../node/anvil.js";
 import { LocalRpc } from "./rpc.js";
 
@@ -47,7 +47,7 @@ async function proveLocalNode(workspaceRoot: string, deps: LocalNodeDeps): Promi
   const foundry = deps.foundry
     ? await deps.foundry()
     : await verifiedFoundry().then((f) => ({ binaryPath: f.binaryPath, sha256: f.ref.files[f.ref.entry]!.sha256 }));
-  const orchestrator = await import("@hardkas/node-orchestrator");
+  const orchestrator = await import("@hardkas/node-runner");
   const status = deps.status ?? (async (dir: string) => orchestrator.getManagedProcessStatus({ stateDir: dir }));
   const st = await status(anvilStateDir(workspaceRoot));
   if (st.state === "unverifiable") throw refuse("L2_NODE_UNVERIFIABLE", `${st.detail}; nothing was sent`, HardkasExitCode.RUNTIME_FAILURE);

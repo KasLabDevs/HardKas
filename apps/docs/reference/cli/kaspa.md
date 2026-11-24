@@ -1,0 +1,99 @@
+---
+title: "hardkas kaspa commands"
+sidebar_label: "hardkas kaspa"
+description: "Reference for the hardkas kaspa commands (wallet create, wallet list, wallet address, wallet balance, and 2 more), with their arguments, options and defaults."
+---
+
+# `hardkas kaspa`
+
+## `hardkas kaspa wallet create`
+
+### Synopsis (Generated)
+
+**Purpose:** Generate a key pair and print its address and config snippet; the private key is printed once, only with --show-private-key; nothing is saved. For a stored, encrypted account use 'accounts real generate' stable
+
+#### Arguments
+
+- `&lt;name&gt;` (Required): 
+
+#### Options
+
+- `--network &lt;id&gt;` (Default: `simnet`): Kaspa network ID (simnet, testnet-10; mainnet, in any spelling or through a config alias, is refused while mainnet is locked down: MAINNET_SIGNING_DISABLED, nothing is generated)
+- `--show-private-key` (Default: `false`): Print the new private key once; you keep the only copy (HardKAS stores nothing and cannot recover it). Without it the command refuses before generating anything
+- `--json` (Default: `false`): Output as JSON (the private key is included only with --show-private-key)
+
+---
+
+## `hardkas kaspa wallet list`
+
+### Synopsis (Generated)
+
+**Purpose:** List local Kaspa wallets stable
+
+#### Options
+
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas kaspa wallet address`
+
+### Synopsis (Generated)
+
+**Purpose:** Show address of a local Kaspa wallet stable
+
+#### Arguments
+
+- `&lt;name&gt;` (Required): 
+
+---
+
+## `hardkas kaspa wallet balance`
+
+### Synopsis (Generated)
+
+**Purpose:** Show balance of a local Kaspa wallet stable
+
+#### Arguments
+
+- `&lt;name&gt;` (Required): 
+
+#### Options
+
+- `--rpc-url &lt;url&gt;` (Default: `ws://127.0.0.1:18210`): Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas kaspa wallet send`
+
+### Synopsis (Generated)
+
+**Purpose:** Plan a payment over --rpc-url with --dry-run (the node must serve the workspace's network); sending is disabled here: use 'tx plan', 'tx sign' and 'tx send' internal
+
+#### Arguments
+
+- `&lt;from&gt;` (Required): 
+- `&lt;to&gt;` (Required): 
+
+#### Options
+
+- `--amount &lt;kas&gt;`: Amount in KAS to send
+- `--dry-run` (Default: `false`): Plan only (required: without it the command refuses, KASPA_WALLET_SEND_DISABLED)
+- `--rpc-url &lt;url&gt;` (Default: `ws://127.0.0.1:18210`): Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)
+
+---
+
+## `hardkas kaspa doctor`
+
+### Synopsis (Generated)
+
+**Purpose:** Check one Kaspa node at --rpc-url: reachability, sync state, UTXO index, DAG info and mempool stable
+
+#### Options
+
+- `--rpc-url &lt;url&gt;` (Default: `ws://127.0.0.1:18210`): Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)
+- `--json` (Default: `false`): Output as JSON
+
+---
+

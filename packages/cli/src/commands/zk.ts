@@ -294,10 +294,14 @@ export function registerZkCommands(program: Command) {
   toccata
     .command("verify-scripts")
     .description(
-      "Verify Toccata P2SH scripts: the pinned RISC Zero verifying key, control root and control id, and a redeem script byte-identical to the one HardKAS builds for the parameters it carries; consensusEnforced only for such an output-bound lock (payout, change, one input, input limit), never from the presence of opcodes"
+      "Verify Toccata P2SH scripts: the pinned RISC Zero verifying key, control root and control id, and a redeem script byte-identical to the one HardKAS builds for the parameters it carries; consensusEnforced only for such an output-bound lock (payout, change, one input, input limit), never from the presence of opcodes. The scripts come from a lock's record (--scripts, as 'spend' takes it) or as hex (--redeem-script and --sig-script)"
     )
-    .requiredOption("--redeem-script <hex>", "Redeem script hex")
-    .requiredOption("--sig-script <hex>", "Signature script hex")
+    .option(
+      "--scripts <file>",
+      "The lock's record: the JSON 'zk toccata build-scripts --json' printed (as 'spend --scripts' takes it). Its scripts are verified against what the record claims (image id, journal hash, binding mode, bound outputs) and any --image-id / --journal-hash / --expected-* given; its P2SH script and addresses must be its redeem script's. Not with --redeem-script / --sig-script"
+    )
+    .option("--redeem-script <hex>", "Redeem script hex (with --sig-script; not with --scripts)")
+    .option("--sig-script <hex>", "Signature script hex (with --redeem-script; not with --scripts)")
     .option("--image-id <hex>", "Expected 32-byte hex Image ID")
     .option("--journal-hash <hex>", "Expected 32-byte hex Journal Hash")
     .option("--expected-mode <mode>", "Expected binding mode ('proof-only' or 'proof-and-output-bound')")
@@ -307,8 +311,9 @@ export function registerZkCommands(program: Command) {
     .option("--expected-change-amount <sompi>", "Expected consensus-bound change amount in sompi")
     .option("--json", "Output as JSON", false)
     .action(async (options: {
-      redeemScript: string;
-      sigScript: string;
+      scripts?: string;
+      redeemScript?: string;
+      sigScript?: string;
       imageId?: string;
       journalHash?: string;
       expectedMode?: "proof-only" | "proof-and-output-bound";
@@ -318,10 +323,18 @@ export function registerZkCommands(program: Command) {
       expectedChangeAmount?: string;
       json?: boolean;
     }) => {
-      const { verifyR0Groth16Scripts } = await import("@hardkas/sdk");
-      const result = verifyR0Groth16Scripts({
-        redeemScript: options.redeemScript,
-        sigScript: options.sigScript,
+      // BETA-FIX W2: the scripts come from ONE place — a record (--scripts) or the hex pair — decided before anything is read
+      const usageV = (code: string, message: string) => new HardkasCliError(code, `${message} Nothing was verified.`, { exitCode: HardkasExitCode.USAGE_ERROR });
+      if (options.scripts !== undefined && (options.redeemScript !== undefined || options.sigScript !== undefined)) {
+        throw usageV("ZK_VERIFY_SCRIPTS_INPUT_CONFLICT", "--scripts gives the lock's redeem and signature scripts (its record); do not also pass --redeem-script or --sig-script.");
+      }
+      if (options.scripts === undefined && (options.redeemScript === undefined || options.sigScript === undefined)) {
+        throw usageV(
+          "ZK_VERIFY_SCRIPTS_INPUT_REQUIRED",
+          "Give the lock: --scripts <record> (the JSON 'zk toccata build-scripts --json' prints), or --redeem-script <hex> with --sig-script <hex>."
+        );
+      }
+      const expected = {
         ...(options.imageId ? { imageId: options.imageId } : {}),
         ...(options.journalHash ? { journalHash: options.journalHash } : {}),
         ...(options.expectedMode ? { expectedBindingMode: options.expectedMode } : {}),
@@ -331,7 +344,17 @@ export function registerZkCommands(program: Command) {
         ...(options.expectedChangeAmount
           ? { expectedChangeAmount: parseSompiOption("--expected-change-amount", options.expectedChangeAmount) }
           : {})
-      });
+      };
+      const { verifyR0Groth16Scripts } = await import("@hardkas/sdk");
+      if (options.scripts === undefined) {
+        const result = verifyR0Groth16Scripts({ redeemScript: options.redeemScript!, sigScript: options.sigScript!, ...expected });
+        printResult(result, options.json);
+        if (!result.ok) {
+          throw new HardkasCliError("ZK_SCRIPTS_VERIFY_FAILED", "Toccata ZK script verification failed", { exitCode: 1 });
+        }
+        return;
+      }
+      const result = await verifyZkScriptsRecord(options.scripts, expected);
       printResult(result, options.json);
       if (!result.ok) {
         throw new HardkasCliError("ZK_SCRIPTS_VERIFY_FAILED", "Toccata ZK script verification failed", { exitCode: 1 });
@@ -435,39 +458,131 @@ function parseOutpointOption(raw: string): { transactionId: string; index: numbe
   return { transactionId: m[1]!.toLowerCase(), index: Number(m[2]) };
 }
 
+/**
+ * A lock's record: the JSON `zk toccata build-scripts --json` prints (a successful hardkas.zkToccataScripts.v1), read the
+ * same way by `spend --scripts` and `verify-scripts --scripts`, its output binding (proof-and-output-bound) with exact
+ * amounts. `invalid` makes the command's own refusal (ZK_SPEND_SCRIPTS_INVALID, ZK_VERIFY_SCRIPTS_RECORD_INVALID).
+ */
+async function readZkScriptsRecord(file: string, invalid: (message: string) => HardkasCliError): Promise<{ record: any; bindingPolicy?: any }> {
+  const fs = await import("node:fs");
+  const { stripBom } = await import("@hardkas/core");
+  let record: any;
+  try {
+    record = JSON.parse(stripBom(fs.readFileSync(file, "utf8")));
+  } catch (e: any) {
+    throw invalid(`--scripts ${file} is not a readable JSON record (${e?.code ?? e?.message}).`);
+  }
+  const { HardkasSchemas } = await import("@hardkas/artifacts");
+  if (
+    record?.schema !== HardkasSchemas.ZkToccataScriptsV1 ||
+    record?.ok !== true ||
+    typeof record.imageId !== "string" ||
+    typeof record.journalHash !== "string" ||
+    typeof record.redeemScript !== "string" ||
+    typeof record.sigScript !== "string"
+  ) {
+    throw invalid(`--scripts ${file} is not a successful '${HardkasSchemas.ZkToccataScriptsV1}' record (the JSON 'zk toccata build-scripts --json' prints).`);
+  }
+  const p = record.bindingMode === "proof-and-output-bound" ? record.bindingPolicy : undefined;
+  const amount = (v: unknown, what: string) => {
+    try {
+      return BigInt(String(v));
+    } catch {
+      throw invalid(`--scripts: ${what} is not an amount.`);
+    }
+  };
+  const bindingPolicy = p
+    ? {
+        mode: "proof-and-output-bound",
+        payout: { address: String(p.payout?.address), amountSompi: amount(p.payout?.amountSompi, "the payout amount") },
+        ...(p.change ? { change: { address: String(p.change.address), amountSompi: amount(p.change.amountSompi, "the change amount") } } : {}),
+        ...(p.maxFeeSompi !== undefined ? { maxFeeSompi: amount(p.maxFeeSompi, "the fee cap") } : {})
+      }
+    : undefined;
+  return { record, ...(bindingPolicy ? { bindingPolicy } : {}) };
+}
+
+/**
+ * BETA-FIX W2 · `verify-scripts --scripts <record>`: the record's scripts verified (verifyR0Groth16Scripts) against what
+ * the record claims — image id, journal hash, binding mode and, output-bound, its payout and change — and, when the
+ * caller gives any, against the caller's expectations too (both must hold; the issues of both are reported). The record
+ * itself must be its redeem script's: its P2SH script public key the hash of it, each address it carries (simnet,
+ * testnet-10) that script's address on that network — what a user funds. Mainnet addresses are never computed (locked
+ * down). Offline: no node.
+ */
+async function verifyZkScriptsRecord(file: string, expected: Record<string, unknown>): Promise<any> {
+  const { record, bindingPolicy } = await readZkScriptsRecord(file, (message) =>
+    new HardkasCliError("ZK_VERIFY_SCRIPTS_RECORD_INVALID", `${message} Nothing was verified.`, { exitCode: HardkasExitCode.USAGE_ERROR })
+  );
+  const { verifyR0Groth16Scripts } = await import("@hardkas/sdk");
+  const scripts = { redeemScript: String(record.redeemScript), sigScript: String(record.sigScript) };
+  const claimed = verifyR0Groth16Scripts({
+    ...scripts,
+    imageId: record.imageId,
+    journalHash: record.journalHash,
+    ...(record.bindingMode === "proof-only" || record.bindingMode === "proof-and-output-bound" ? { expectedBindingMode: record.bindingMode } : {}),
+    ...(bindingPolicy
+      ? {
+          expectedPayoutAddress: bindingPolicy.payout.address,
+          expectedPayoutAmount: bindingPolicy.payout.amountSompi,
+          ...(bindingPolicy.change ? { expectedChangeAddress: bindingPolicy.change.address, expectedChangeAmount: bindingPolicy.change.amountSompi } : {})
+        }
+      : {})
+  });
+  const issues: Array<{ code: string; message: string }> = [...claimed.issues];
+  const seen = new Set(issues.map((i) => `${i.code}\u0000${i.message}`));
+  let ok = claimed.ok;
+  if (Object.keys(expected).length > 0) {
+    const asked = verifyR0Groth16Scripts({ ...scripts, ...expected } as any);
+    ok = ok && asked.ok;
+    for (const i of asked.issues) {
+      const key = `${i.code}\u0000${i.message}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        issues.push(i);
+      }
+    }
+  }
+  // the record is what a user funds: its P2SH script and addresses must be the redeem script's
+  const core = await import("@hardkas/core");
+  const redeem = scripts.redeemScript.trim().toLowerCase();
+  let spk: { version: number; script: string } | undefined;
+  try {
+    spk = core.silverP2shLock(redeem);
+  } catch {
+    spk = undefined;
+  }
+  const recorded = record.p2shScriptPublicKey;
+  const p2shScriptPublicKeyMatches =
+    spk !== undefined && Number(recorded?.version) === Number(spk.version) && String(recorded?.script ?? "").toLowerCase() === String(spk.script).toLowerCase();
+  if (!p2shScriptPublicKeyMatches) {
+    issues.push({ code: "ZK_SCRIPTS_RECORD_P2SH_MISMATCH", message: "The record's p2shScriptPublicKey is not the P2SH script of its redeem script: funding it would not lock to these scripts" });
+  }
+  const addressesMatch: Record<string, boolean> = {};
+  for (const [key, network] of [["simnet", "simnet"], ["testnet10", "testnet-10"]] as const) {
+    const given = record.p2shAddresses?.[key];
+    if (given === undefined || given === "") continue;
+    let derived: string | undefined;
+    try {
+      derived = core.silverP2shAddress(redeem, network);
+    } catch {
+      derived = undefined;
+    }
+    addressesMatch[key] = derived !== undefined && String(given) === derived;
+    if (!addressesMatch[key]) {
+      issues.push({ code: "ZK_SCRIPTS_RECORD_ADDRESS_MISMATCH", message: `The record's ${network} P2SH address ${String(given)} is not its redeem script's (${derived ?? "not derivable"}): do not fund it` });
+    }
+  }
+  ok = ok && p2shScriptPublicKeyMatches && Object.values(addressesMatch).every(Boolean);
+  return { ...claimed, ok, issues, scriptsRecord: { path: file, p2shScriptPublicKeyMatches, addressesMatch } };
+}
+
 /** The lock's parameters: from its record (--scripts) or from the options; never both. */
 async function zkLockParameters(options: ZkSpendCliOptions): Promise<{ imageId: string; journalHash: string; bindingPolicy?: any; record?: any }> {
   const given = ["imageId", "journalHash", "mode", "payoutAddress", "payoutAmount", "changeAddress", "changeAmount", "maxFee"].filter((k) => (options as any)[k] !== undefined);
   if (options.scripts !== undefined) {
     if (given.length > 0) throw usage("ZK_SPEND_LOCK_OPTIONS_CONFLICT", `--scripts gives the lock's parameters; do not also pass ${given.map((k) => "--" + k.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase())).join(", ")}.`);
-    const fs = await import("node:fs");
-    const { stripBom } = await import("@hardkas/core");
-    let record: any;
-    try {
-      record = JSON.parse(stripBom(fs.readFileSync(options.scripts, "utf8")));
-    } catch (e: any) {
-      throw usage("ZK_SPEND_SCRIPTS_INVALID", `--scripts ${options.scripts} is not a readable JSON record (${e?.code ?? e?.message}).`);
-    }
-    const { HardkasSchemas } = await import("@hardkas/artifacts");
-    if (record?.schema !== HardkasSchemas.ZkToccataScriptsV1 || record?.ok !== true || typeof record.imageId !== "string" || typeof record.journalHash !== "string") {
-      throw usage("ZK_SPEND_SCRIPTS_INVALID", `--scripts ${options.scripts} is not a successful '${HardkasSchemas.ZkToccataScriptsV1}' record (the JSON 'zk toccata build-scripts --json' prints).`);
-    }
-    const p = record.bindingMode === "proof-and-output-bound" ? record.bindingPolicy : undefined;
-    const amount = (v: unknown, what: string) => {
-      try {
-        return BigInt(String(v));
-      } catch {
-        throw usage("ZK_SPEND_SCRIPTS_INVALID", `--scripts: ${what} is not an amount.`);
-      }
-    };
-    const bindingPolicy = p
-      ? {
-          mode: "proof-and-output-bound",
-          payout: { address: String(p.payout?.address), amountSompi: amount(p.payout?.amountSompi, "the payout amount") },
-          ...(p.change ? { change: { address: String(p.change.address), amountSompi: amount(p.change.amountSompi, "the change amount") } } : {}),
-          ...(p.maxFeeSompi !== undefined ? { maxFeeSompi: amount(p.maxFeeSompi, "the fee cap") } : {})
-        }
-      : undefined;
+    const { record, bindingPolicy } = await readZkScriptsRecord(options.scripts, (message) => usage("ZK_SPEND_SCRIPTS_INVALID", message));
     return { imageId: record.imageId, journalHash: record.journalHash, ...(bindingPolicy ? { bindingPolicy } : {}), record };
   }
   if (!options.imageId || !options.journalHash) throw usage("ZK_SPEND_LOCK_REQUIRED", "Give the lock: --scripts <record>, or --image-id and --journal-hash (and its binding options).");

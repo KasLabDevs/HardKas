@@ -564,7 +564,7 @@ export function createHardkasCapabilities(): HardkasCapabilities {
   const notProbed = "not probed: HardkasCapabilitiesApi.get() checks it";
   return {
     version: HARDKAS_VERSION,
-    maturity: "hardened-alpha",
+    maturity: "stable",
     proofVersion: "repro-v0",
     hashVersion: CURRENT_HASH_VERSION,
     capabilities: {

@@ -32,6 +32,9 @@ export class RpcObserverBackend implements HardkasObserverBackend {
 
       dagInfo = await this.sdk.rpc.getBlockDagInfo();
     } catch (e: any) {
+      // RPC-RESPONSE-TOO-LARGE-1: the node answered, with more than HardKAS reads in one message: its typed refusal (the
+      // node is fine, the remedy is in it), never OBSERVATION_RPC_UNAVAILABLE
+      if (e?.code === "RPC_RESPONSE_TOO_LARGE") throw e;
       if (
         e.message?.includes("fetch failed") ||
         e.message?.includes("ECONNREFUSED") ||

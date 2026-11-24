@@ -100,6 +100,15 @@ export function verifyLineage(
     );
   }
 
+  // Self-parent check applies whether or not the caller supplied a separate parent object.
+  if (
+    typeof lineage.parentArtifactId === "string" &&
+    lineage.parentArtifactId.length > 0 &&
+    (lineage.artifactId === lineage.parentArtifactId || artifact.contentHash === lineage.parentArtifactId)
+  ) {
+    addIssue("SELF_PARENT", "Artifact cannot be its own parent.");
+  }
+
   // 3. Chain Continuity (if parent is provided)
   if (parent) {
     const parentLineage = parent.lineage;
@@ -164,11 +173,6 @@ export function verifyLineage(
         "MODE_MISMATCH",
         `Mode mismatch: parent is ${parent.mode}, current is ${artifact.mode}`
       );
-    }
-
-    // Self-parent check
-    if (lineage.artifactId === lineage.parentArtifactId) {
-      addIssue("SELF_PARENT", "Artifact cannot be its own parent.");
     }
   }
 

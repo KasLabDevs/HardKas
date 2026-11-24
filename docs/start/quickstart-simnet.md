@@ -1,5 +1,6 @@
 ---
-title: "Quickstart: a real transaction on your simnet"
+title: "Quickstart: a real Kaspa transaction on your own simnet"
+sidebar_label: "Quickstart: a real transaction on your simnet"
 description: From an empty project to a confirmed, verified payment on your own rusty-kaspad simnet node, with the CLI and then with the SDK.
 ---
 
@@ -109,9 +110,10 @@ Artifact saved to: plan.json
 ```
 
 The plan is built from the node's UTXOs by the official `kaspa-wasm` Generator,
-with a fee rate of 100 sompi per gram (the real-network default; not a live
-estimate). It is a transaction **v0**, like every normal payment. No key was
-used.
+with the fee rate the node estimates (its normal bucket), never below the relay
+minimum of 100 sompi per gram; on an idle simnet that is the minimum, as above.
+`--fee-rate` sets another rate. It is a transaction **v0**, like every normal
+payment. No key was used.
 
 ## 4. Inspect and verify before signing
 

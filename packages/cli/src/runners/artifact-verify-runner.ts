@@ -9,6 +9,16 @@ import fs from "node:fs";
 import { HardkasSchemas } from "@hardkas/artifacts";
 import { stripBom } from "@hardkas/core";
 
+/**
+ * AUDIT 2026-11-21 · A2 · the origin statement of every verification verdict. An artifact's contentHash is an unkeyed
+ * hash: integrity means the file is self-consistent, not that its author is known or that nobody rewrote it.
+ */
+export const ARTIFACT_ORIGIN_NOT_AUTHENTICATED = {
+  level: "NOT_AUTHENTICATED",
+  message:
+    "contentHash is an unkeyed SHA-256: it proves the file is self-consistent, not who wrote it. Review recipient, amount and fee before signing a plan you did not create."
+} as const;
+
 export interface ArtifactVerifyOptions {
   path: string;
   json?: boolean;
@@ -172,6 +182,10 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
   const verdict = net.verdictLevelOf(result.ok, networkCheck);
   (result as any).levels = {
     integrity: result.ok ? "INTEGRITY_VERIFIED" : "INTEGRITY_FAILED",
+    // AUDIT 2026-11-21 · A2: what the integrity level does NOT say. contentHash is an unkeyed SHA-256 of the artifact's
+    // own body: it shows the file is self-consistent, never who wrote it. Anyone who can write the file can change a
+    // recipient or an amount and recompute it. Stated in every verdict so INTEGRITY_VERIFIED is not read as authorship.
+    origin: ARTIFACT_ORIGIN_NOT_AUTHENTICATED,
     network: networkCheck.network,
     consensus: networkCheck.consensus,
     verdict,
@@ -245,6 +259,7 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
     const c = networkCheck.consensus as any;
     console.log(`\nLevels:`);
     console.log(`  Integrity: INTEGRITY_VERIFIED (offline)`);
+    console.log(`  Origin:    ${ARTIFACT_ORIGIN_NOT_AUTHENTICATED.level} · ${ARTIFACT_ORIGIN_NOT_AUTHENTICATED.message}`);
     const nodeLine = n.node
       ? ` · node ${n.node.nodeType} ${n.node.evidence?.serverVersion ?? ""} at ${n.node.endpoint ?? "?"} (${n.node.trust}, sync ${n.node.sync})`
       : "";

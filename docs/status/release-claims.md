@@ -1,3 +1,8 @@
+---
+title: "Release Claims and Gates"
+description: "The release status values the HardKAS release checks verify, what is explicitly not claimed, and the gates a release must pass."
+---
+
 # Release Claims and Gates
 > **Claims are generated.** The authoritative values live in
 > [claims.generated.md](./claims.generated.md), produced from `packages/sdk` by
@@ -49,7 +54,7 @@ Allowed surface claims:
   production or audited contracts.
 - ZK corpus: ZK_CORPUS_SURFACE_READY
 - Groth16 corpus fixture coherence: READY_GROTH16_FIXTURE_COHERENCE
-- RISC0 inspect-only: RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED
+- RISC0: Groth16 receipts verified locally (`zk toccata verify-receipt`, pinned RISC Zero key); other zkVM receipts inspect-only (RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED)
 - vProgs artifact inspection: VPROGS_INSPECT_SURFACE_READY
 - zkOnchainVerification: NOT_CLAIMED
 - vProgsRuntime: NOT_CLAIMED

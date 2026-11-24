@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { UI } from "../ui.js";
 import { getOutput } from "../output.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
+import { broadcastYesHelp, requireBroadcastConfirmation } from "../broadcast-confirmation.js";
 
 /*
  * WALLET-HD-1 · `hardkas wallet hd …`: recoverable BIP39/BIP32 Kaspa HD wallets kept in the workspace
@@ -242,7 +243,7 @@ export function registerWalletHdCommands(program: Command) {
     });
 
   hd.command("balance <wallet>")
-    .description(`Scan the wallet's receive and change addresses on the node (gap limit) and show what they hold. Mainnet is refused: MAINNET_CONNECTION_DISABLED ${UI.maturity("experimental")}`)
+    .description(`Scan the wallet's receive and change addresses on the node (gap limit) and show what they hold: every address the wallet's index handed out (zero where emptied) and any funded one past it. Mainnet is refused: MAINNET_CONNECTION_DISABLED ${UI.maturity("experimental")}`)
     .option("--network <network>", "The workspace network to read (default: the workspace's): it must be the wallet's")
     .option("--gap-limit <n>", "Consecutive unused addresses per chain before the scan stops (default 20)")
     .option("--account <n>", "Account index (default 0)")
@@ -272,14 +273,20 @@ export function registerWalletHdCommands(program: Command) {
       });
       if (o.json) return getOutput().writeJson(scan);
       const { formatSompiToKas: formatSompi } = await import("@hardkas/core");
-      getOutput().writeLine(`'${scan.label}' on ${scan.network}, account ${scan.account}: ${formatSompi(scan.totalSompi)} KAS in ${scan.utxoCount} UTXO(s) on ${scan.used.length} address(es)${scan.verified ? "" : " (addresses from the wallet file's public key, not authenticated: pass the password to check it)"}`);
-      for (const u of scan.used) getOutput().writeLine(`  ${u.path.padEnd(24)} ${u.address}  ${formatSompi(u.balanceSompi)} KAS (${u.utxoCount} UTXO)`);
+      // BETA-FIX W2: `used` lists every address the local index handed out (zero where emptied), not only the funded ones
+      const funded = scan.used.filter((u) => u.utxoCount > 0).length;
+      getOutput().writeLine(
+        `'${scan.label}' on ${scan.network}, account ${scan.account}: ${formatSompi(scan.totalSompi)} KAS in ${scan.utxoCount} UTXO(s) on ${funded} address(es); ${scan.used.length} used address(es)${scan.verified ? "" : " (addresses from the wallet file's public key, not authenticated: pass the password to check it)"}`
+      );
+      for (const u of scan.used) {
+        getOutput().writeLine(`  ${u.path.padEnd(24)} ${u.address}  ${formatSompi(u.balanceSompi)} KAS (${u.utxoCount} UTXO)${u.handedOut ? "" : " (found by the scan, past the local index)"}`);
+      }
       getOutput().writeLine(`  scanned ${scan.scanned.receive} receive + ${scan.scanned.change} change addresses (gap limit ${scan.gapLimit}); next unused: receive ${scan.nextReceive}, change ${scan.nextChange}`);
     });
 
   hd.command("send <wallet>")
     .description(
-      `Pay from the wallet: one plan over the UTXOs of all its addresses (the payment planner), change to its next unused change address, each input signed with its own address's key, sent through the same send path as 'tx send' (synced node, one submission per txId, records). Mainnet is refused: MAINNET_BROADCAST_DISABLED, before the password is read ${UI.maturity("experimental")}`
+      `Pay from the wallet: one plan over the UTXOs of all its addresses (the payment planner), change to its next unused change address, each input signed with its own address's key, sent through the same send path as 'tx send' (synced node, one submission per txId, records). Mainnet is refused: MAINNET_BROADCAST_DISABLED, before the password is read; off simnet it needs --yes, as 'tx send' ${UI.maturity("experimental")}`
     )
     .requiredOption("--to <address>", "Recipient: a Kaspa address or a workspace account name")
     .requiredOption("--amount <kas>", "Amount in KAS (decimal string)")
@@ -289,16 +296,29 @@ export function registerWalletHdCommands(program: Command) {
     .option("--gap-limit <n>", "Consecutive unused addresses per chain before the scan stops (default 20)")
     .option("--account <n>", "Account index (default 0)")
     .option("--preflight", "Check every input and signature against the node right before the broadcast (as 'tx send --preflight')", false)
+    .option("--yes", broadcastYesHelp("the payment"), false)
     .option("--password-env <env>", PASSWORD_ENV)
     .option("--password-stdin", PASSWORD_STDIN, false)
     .option("--passphrase-env <env>", PASSPHRASE_ENV)
     .option("--json", JSON_OPT, false)
-    .action(async (ref: string, o: SecretOptions & { to: string; amount: string; network?: string; feeRate?: string; maxFeeSompi?: string; gapLimit?: string; account?: string; preflight?: boolean }) => {
+    .action(async (ref: string, o: SecretOptions & { to: string; amount: string; network?: string; feeRate?: string; maxFeeSompi?: string; gapLimit?: string; account?: string; preflight?: boolean; yes?: boolean }) => {
       const { root, config } = await workspace();
       const m = await manager(root);
       const described = m.describe(ref);
       const { refuseMainnetBroadcast } = await import("../mainnet-guard.js");
       refuseMainnetBroadcast(config, [o.network, described.network], "wallet hd send", true);
+      // BETA-FIX W2 · AUX-11 (tx send's rule): off the simulator and simnet nothing is read, signed or sent without --yes.
+      // The network is the one asked for (as its config entry declares it), else the wallet's own (it must be the same).
+      {
+        const { declaredNetworkIdOf } = await import("@hardkas/core");
+        requireBroadcastConfirmation({
+          command: "wallet hd send",
+          network: String(o.network !== undefined ? (declaredNetworkIdOf(config, o.network) ?? o.network) : described.network),
+          yes: o.yes,
+          json: o.json,
+          nothingDone: "Nothing was read, signed, broadcast or written (the wallet was not opened)."
+        });
+      }
       const gapLimit = nonNegativeInt(o.gapLimit, "--gap-limit");
       const account = nonNegativeInt(o.account, "--account");
       if (o.feeRate !== undefined && !/^\d+$/.test(o.feeRate)) throw usage("INVALID_FEE_RATE", `--fee-rate takes a positive integer of sompi per gram (got ${JSON.stringify(o.feeRate)}).`);
