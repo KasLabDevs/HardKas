@@ -110,7 +110,7 @@ describe("Multisig Adversarial Suite", () => {
 
     // Reset localnet state with faucet
     const { resetLocalnetState } = await import("@hardkas/localnet");
-    await resetLocalnetState({ initialBalanceSompi: 100_000_000_000n });
+    await resetLocalnetState({ cwd: tmpDir, initialBalanceSompi: 100_000_000_000n });
 
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
     await sdk.artifacts.write(plan);
