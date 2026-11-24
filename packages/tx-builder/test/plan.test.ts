@@ -65,7 +65,7 @@ describe("tx-builder plan", () => {
         feeRateSompiPerMass: 100n,
         networkId: "simnet"
       })
-    ).toThrow(/change|fee|mass/i);
+    ).toThrow(/TX_CHANGE_SURPLUS_EXCEEDS_CAP.*1000000/);
 
     // With a second 1 KAS UTXO available, combining avoids burning 0.05 KAS and produces a valid change output.
     const multi = buildPaymentPlan({

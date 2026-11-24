@@ -70,7 +70,7 @@ describe("Priority 1 · Mainnet lockdown across all @hardkas/accounts signing pa
       hardkasVersion: HARDKAS_VERSION,
       hashVersion: CURRENT_HASH_VERSION,
       networkId: "mainnet",
-      planArtifactId: plan.contentHash,
+      planArtifactId: plan.contentHash!,
       txId,
       slots: [{ input: 0, kind: "p2pk", signer: "alice", publicKey: xonly }]
     };

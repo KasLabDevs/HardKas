@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { KaspaJsonRpcClient } from "../src/json-rpc-client.js";
 import { JsonWrpcKaspaClient } from "../src/index.js";
+import { KaspaWrpcClient } from "../src/wrpc-client.js";
 import { LoadBalancedRpcProvider } from "../src/provider.js";
 import { isRpcRequestNotSentError } from "../src/errors.js";
 import { fakeOfficialRpc, nodeError } from "./helpers/fake-official-rpc.js";
@@ -242,6 +243,20 @@ describe("RPC-SUBMIT-SAFETY-1 · JsonWrpcKaspaClient (the SDK's default transpor
       const rpc = fakeOfficialRpc({ ...identified, submitTransaction: () => payload });
       const r = await new JsonWrpcKaspaClient({ rpcUrl: url, rpcFactory: rpc.factory }).submitTransaction(tx(TXID) as any);
       expect(r.accepted).toBe(false);
+    }
+  });
+
+  it("KaspaWrpcClient preserves accepted:false when node returns isAccepted:false or success:false", async () => {
+    for (const payload of [{ transactionId: TXID, isAccepted: false }, { transactionId: TXID, success: false }]) {
+      const rpc = fakeOfficialRpc({ ...identified, submitTransaction: () => payload });
+      const wrpc = new KaspaWrpcClient("ws://127.0.0.1:17110", { rpcFactory: rpc.factory } as any);
+      await wrpc.connect();
+      try {
+        const r = (await wrpc.submitTransaction(tx(TXID) as any)) as any;
+        expect(r.accepted).toBe(false);
+      } finally {
+        await wrpc.disconnect();
+      }
     }
   });
 });

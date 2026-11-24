@@ -293,7 +293,7 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
   if (surplusBurnBlocked) {
     throw new Error(
       `TX_CHANGE_SURPLUS_EXCEEDS_CAP: omitting change would burn ${surplusBurnBlocked.surplus} sompi as fee ` +
-        `(required fee ${surplusBurnBlocked.requiredFee} sompi, excess exceeds dust threshold ${DUST_THRESHOLD_SOMPI} sompi)` +
+        `(required fee ${surplusBurnBlocked.requiredFee} sompi, excess exceeds cap ${MAX_NO_CHANGE_SURPLUS_SOMPI} sompi)` +
         (lastAttemptNonStandard && nonStandard ? `; ${nonStandard.message}` : "")
     );
   }

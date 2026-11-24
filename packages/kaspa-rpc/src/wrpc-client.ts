@@ -187,11 +187,19 @@ export class KaspaWrpcClient {
       throw classifySubmitFailure(e, expected);
     }
     // RPC-SUBMIT-SAFETY-1: accepted only when the answer names the transaction (never an empty id)
-    const transactionId = result?.accepted === false ? result?.transactionId || result?.transactionID || "" : acceptedTxIdOf(result, expected);
+    const rawAccepted = result?.accepted ?? result?.isAccepted ?? result?.success;
+    if (rawAccepted === false) {
+      return {
+        ...result,
+        accepted: false,
+        transactionId: result?.transactionId || result?.transactionID || result?.transaction_id || ""
+      };
+    }
+    const transactionId = acceptedTxIdOf(result, expected);
     // Normalize return to match SDK expectations (accepted + transactionId)
     return {
-      accepted: true,
       ...result,
+      accepted: rawAccepted !== undefined && rawAccepted !== null ? Boolean(rawAccepted) : true,
       transactionId
     };
   }

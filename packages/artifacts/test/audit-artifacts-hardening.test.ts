@@ -58,6 +58,7 @@ describe("Priority 5 · Artifacts hardening (bigint round-trip, SELF_PARENT, par
       to: { input: "bob", address: "kaspasim:qqbob" },
       amountSompi: 500n,
       plan: {
+        version: 0,
         inputs: [{ outpoint: { transactionId: "ab".repeat(32), index: 0 }, amountSompi: 1000n, address: "kaspasim:qqalice", scriptPublicKey: "spk" }],
         outputs: [{ address: "kaspasim:qqbob", amountSompi: 500n }],
         change: { address: "kaspasim:qqalice", amountSompi: 490n },
@@ -84,6 +85,17 @@ describe("Priority 5 · Artifacts hardening (bigint round-trip, SELF_PARENT, par
     const strict = verifyArtifactSemantics(selfParented, { strict: true });
     expect(strict.ok).toBe(false);
     expect(strict.issues.some((i) => i.code === "SELF_PARENT")).toBe(true);
+
+    // Even if lineage.artifactId was tampered to differ from contentHash, parentArtifactId === contentHash is still SELF_PARENT.
+    const forgedLineageId = {
+      ...selfParented,
+      lineage: {
+        ...selfParented.lineage,
+        artifactId: "ab".repeat(32)
+      }
+    };
+    const forgedRes = verifyArtifactSemantics(forgedLineageId, { strict: false });
+    expect(forgedRes.issues.some((i) => i.code === "SELF_PARENT")).toBe(true);
   });
 
   it("verifies parent integrity (contentHash) recursively during strict verifyArtifactSemantics", () => {
@@ -95,6 +107,7 @@ describe("Priority 5 · Artifacts hardening (bigint round-trip, SELF_PARENT, par
       to: { input: "bob", address: "kaspasim:qzgh3e6qqe6jfevf0dc652uszm0lnhvhzmasga5lka4kcl5udget5065p52eh" },
       amountSompi: 500_000_000_000n,
       plan: {
+        version: 0,
         inputs: [
           {
             outpoint: { transactionId: "ab".repeat(32), index: 0 },

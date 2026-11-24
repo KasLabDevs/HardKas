@@ -101,12 +101,10 @@ export function verifyLineage(
   }
 
   // Self-parent check applies whether or not the caller supplied a separate parent object.
-  const selfId = lineage.artifactId || artifact.contentHash;
   if (
     typeof lineage.parentArtifactId === "string" &&
     lineage.parentArtifactId.length > 0 &&
-    selfId &&
-    selfId === lineage.parentArtifactId
+    (lineage.artifactId === lineage.parentArtifactId || artifact.contentHash === lineage.parentArtifactId)
   ) {
     addIssue("SELF_PARENT", "Artifact cannot be its own parent.");
   }
